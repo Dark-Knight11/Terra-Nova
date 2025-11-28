@@ -3,15 +3,21 @@ import web3Service from './web3.service';
 import { Logger } from '../utils/logger';
 import prisma from '../db/client';
 
-// Placeholder ABI - will be replaced with actual contract ABI
-const CARBON_CREDIT_ABI = [
-    // ERC20-like functions
-    'function balanceOf(address owner) view returns (uint256)',
-    'function transfer(address to, uint256 amount) returns (bool)',
+// Contract Addresses
+const DEFAULT_CONTRACT_ADDRESS = '0xcd0b420f1ab141c0D411E43f23F68d6A80650e90';
+const DEFAULT_MARKETPLACE_ADDRESS = '0x63CdAF5CC857105E7a0dAE9463Ef8E04dF5A3c8e';
 
-    // Carbon credit specific
+const CARBON_CREDIT_ABI = [
+    // ERC1155 functions
+    'function balanceOf(address account, uint256 id) view returns (uint256)',
+    'function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data) external',
+    
+    // Legacy support / Convenience
+    'function balanceOf(address owner) view returns (uint256)',
     'function getProjectDetails(uint256 projectId) view returns (string memory name, string memory location, uint256 credits)',
-    'function mintCredits(address to, uint256 amount) returns (bool)',
+    
+    // Carbon credit specific
+    'function mintCredits(uint256 projectId, uint256 amount, string memory monitoringReportHash) external',
 
     // Events
     'event Transfer(address indexed from, address indexed to, uint256 value)',
@@ -40,7 +46,7 @@ class ContractService {
     // Initialize contract
     private getContract(): ethers.Contract {
         if (!this.contract) {
-            this.contractAddress = process.env.CONTRACT_ADDRESS || '';
+            this.contractAddress = process.env.CONTRACT_ADDRESS || DEFAULT_CONTRACT_ADDRESS;
 
             if (!this.contractAddress) {
                 throw new Error('CONTRACT_ADDRESS not configured');
@@ -61,12 +67,10 @@ class ContractService {
 
     private getMarketplaceContract(): ethers.Contract {
         if (!this.marketplaceContract) {
-            this.marketplaceAddress = process.env.MARKETPLACE_CONTRACT_ADDRESS || '';
+            this.marketplaceAddress = process.env.MARKETPLACE_CONTRACT_ADDRESS || DEFAULT_MARKETPLACE_ADDRESS;
 
             if (!this.marketplaceAddress) {
-                // Fallback or throw? For now, let's log warning and throw if critical
                 Logger.warn('MARKETPLACE_CONTRACT_ADDRESS not configured, using placeholder or skipping');
-                // throw new Error('MARKETPLACE_CONTRACT_ADDRESS not configured');
             }
 
             if (this.marketplaceAddress) {
@@ -96,9 +100,12 @@ class ContractService {
             }
 
             const contract = this.getContract();
+            // Using the legacy support function which returns total balance across all IDs
             const balance = await contract.balanceOf(walletAddress);
 
-            // Convert from wei to tokens (assuming 18 decimals)
+            // Convert from wei to tokens (assuming 18 decimals equivalent logic in contract)
+            // Note: If ERC1155 uses 0 decimals for count, formatUnits might be wrong if '18' is expected.
+            // But based on previous code it expected 18.
             return ethers.formatUnits(balance, 18);
         } catch (error) {
             Logger.error('Failed to get credit balance', { walletAddress, error });

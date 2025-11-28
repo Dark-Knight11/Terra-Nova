@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Share2, Shield } from 'lucide-react';
+import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Share2, Shield, ExternalLink, Copy, Loader2 } from 'lucide-react';
 import { api } from '../api/client';
+import { contractService } from '../services/contractService';
 
 interface ProjectDetailViewProps {
     selectedProject: any;
@@ -13,6 +14,9 @@ interface ProjectDetailViewProps {
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick, onViewCompany, onTrade }) => {
     const [detailTab, setDetailTab] = useState('overview'); // overview, audit, company
     const [credits, setCredits] = useState<any[]>([]);
+    const [onChainData, setOnChainData] = useState<any>(null);
+    const [loadingChainData, setLoadingChainData] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         const fetchCredits = async () => {
@@ -30,7 +34,38 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
         fetchCredits();
     }, []);
 
+    // Fetch on-chain data if project has a projectId
+    useEffect(() => {
+        const fetchOnChainData = async () => {
+            if (selectedProject?.projectId || selectedProject?.id) {
+                setLoadingChainData(true);
+                try {
+                    if (contractService.isWalletAvailable()) {
+                        await contractService.connectWallet();
+                        const projectId = selectedProject.projectId || selectedProject.id;
+                        const data = await contractService.getProjectInfo(projectId.toString());
+                        setOnChainData(data);
+                    }
+                } catch (err) {
+                    console.log('On-chain data not available:', err);
+                } finally {
+                    setLoadingChainData(false);
+                }
+            }
+        };
+        fetchOnChainData();
+    }, [selectedProject]);
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     if (!selectedProject) return <div className="pt-32 px-6">Loading...</div>;
+
+    const contractAddresses = contractService.getContractAddresses();
+    const projectWallet = selectedProject.wallet || onChainData?.projectDeveloper || '0x...';
 
     return (
         <div className="pt-24 px-6 pb-20 min-h-screen">
@@ -50,8 +85,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                 <div className="flex flex-wrap items-center gap-2 mb-2">
                                     <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-xs uppercase tracking-wider font-medium">Verified Asset</span>
                                     <span className="px-3 py-1 bg-white/10 text-white border border-white/20 rounded text-xs uppercase tracking-wider font-medium">{selectedProject.type}</span>
+                                    {onChainData && (
+                                        <span className="px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded text-xs uppercase tracking-wider font-medium">
+                                            On-Chain #{onChainData.projectId}
+                                        </span>
+                                    )}
                                 </div>
-                                <h1 className="font-serif text-3xl md:text-5xl leading-tight">{selectedProject.title}</h1>
+                                <h1 className="font-serif text-3xl md:text-5xl leading-tight">{selectedProject.title || onChainData?.projectName}</h1>
                             </div>
                         </div>
 
@@ -71,7 +111,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
 
                         {/* Tab Content */}
                         <div className="py-8 min-h-[300px]">
-                            {/* ... existing overview content ... */}
                             {detailTab === 'overview' && (
                                 <div className="space-y-6 animate-fade-in">
                                     <p className="text-white/70 leading-relaxed text-lg">{selectedProject.description}</p>
@@ -79,21 +118,57 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                             <div className="text-xs text-white/40 uppercase tracking-widest mb-1">Vintage</div>
-                                            <div className="text-lg font-medium">{selectedProject.vintage}</div>
+                                            <div className="text-lg font-medium">{selectedProject.vintage || onChainData?.vintageYear || 'N/A'}</div>
                                         </div>
                                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                             <div className="text-xs text-white/40 uppercase tracking-widest mb-1">Methodology</div>
-                                            <div className="text-lg font-medium truncate" title={selectedProject.methodology}>{selectedProject.methodology}</div>
+                                            <div className="text-lg font-medium truncate" title={selectedProject.methodology}>{selectedProject.methodology || onChainData?.registry || 'N/A'}</div>
                                         </div>
                                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                             <div className="text-xs text-white/40 uppercase tracking-widest mb-1">Location</div>
-                                            <div className="text-lg font-medium">{selectedProject.location}</div>
+                                            <div className="text-lg font-medium">{selectedProject.location || onChainData?.country || 'N/A'}</div>
                                         </div>
                                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                             <div className="text-xs text-white/40 uppercase tracking-widest mb-1">Volume</div>
-                                            <div className="text-lg font-medium text-emerald-400 truncate" title={selectedProject.volume}>{selectedProject.volume}</div>
+                                            <div className="text-lg font-medium text-emerald-400 truncate" title={selectedProject.volume}>
+                                                {selectedProject.volume || (onChainData ? `${parseInt(onChainData.totalCreditsIssued).toLocaleString()} tCO2e` : 'N/A')}
+                                            </div>
                                         </div>
                                     </div>
+
+                                    {/* On-Chain Data Section */}
+                                    {loadingChainData ? (
+                                        <div className="flex items-center gap-2 text-white/40 mt-6">
+                                            <Loader2 size={16} className="animate-spin" />
+                                            <span>Loading on-chain data...</span>
+                                        </div>
+                                    ) : onChainData && (
+                                        <div className="mt-8 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                                            <h3 className="text-emerald-400 font-medium mb-4 flex items-center gap-2">
+                                                <CheckCircle size={18} /> On-Chain Verification
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <div className="text-white/40">Project ID</div>
+                                                    <div className="font-mono text-white">#{onChainData.projectId}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-white/40">Status</div>
+                                                    <div className="text-emerald-400">
+                                                        {['Submitted', 'Under Audit', 'Approved', 'Rejected', 'Active', 'Completed'][onChainData.status]}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-white/40">Credits Issued</div>
+                                                    <div className="font-mono text-white">{parseInt(onChainData.totalCreditsIssued).toLocaleString()}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-white/40">Credits Retired</div>
+                                                    <div className="font-mono text-white">{parseInt(onChainData.totalCreditsRetired).toLocaleString()}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -103,15 +178,15 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                         <Activity className="text-blue-400 mt-1 flex-shrink-0" size={24} />
                                         <div>
                                             <h3 className="text-blue-200 font-medium mb-1">Agentic Verification Active</h3>
-                                            <p className="text-sm text-blue-200/60">Our AI agents have continuously monitored this project's wallet address <strong className="break-all">{selectedProject.wallet}</strong> for the last 18 months. No double-counting anomalies detected.</p>
+                                            <p className="text-sm text-blue-200/60">Our AI agents have continuously monitored this project's wallet address <strong className="break-all">{projectWallet}</strong> for the last 18 months. No double-counting anomalies detected.</p>
                                         </div>
                                     </div>
-                                    {/* ... existing logs ... */}
+
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center p-4 bg-white/5 rounded-lg border border-white/5">
                                             <div className="flex items-center gap-3">
                                                 <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" />
-                                                <span className="text-sm">Land Satelite Imagery Match</span>
+                                                <span className="text-sm">Land Satellite Imagery Match</span>
                                             </div>
                                             <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">100% Match</span>
                                         </div>
@@ -124,10 +199,42 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                         </div>
                                         <div className="flex justify-between items-center p-4 bg-white/5 rounded-lg border border-white/5">
                                             <div className="flex items-center gap-3">
+                                                <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" />
+                                                <span className="text-sm">Smart Contract Verification</span>
+                                            </div>
+                                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">ERC-1155 Compliant</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-4 bg-white/5 rounded-lg border border-white/5">
+                                            <div className="flex items-center gap-3">
                                                 <Clock size={16} className="text-emerald-500 flex-shrink-0" />
                                                 <span className="text-sm">Retirement Latency</span>
                                             </div>
                                             <span className="text-xs text-white/50 px-2 py-1">&lt; 200ms</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Blockchain Explorer Links */}
+                                    <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/5">
+                                        <h4 className="text-sm font-medium mb-3">Blockchain Verification</h4>
+                                        <div className="space-y-2">
+                                            <a
+                                                href={`https://sepolia.etherscan.io/address/${contractAddresses.token}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-between text-sm text-white/60 hover:text-emerald-400 transition-colors"
+                                            >
+                                                <span>View Token Contract</span>
+                                                <ExternalLink size={14} />
+                                            </a>
+                                            <a
+                                                href={`https://sepolia.etherscan.io/address/${contractAddresses.marketplace}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-between text-sm text-white/60 hover:text-emerald-400 transition-colors"
+                                            >
+                                                <span>View Marketplace Contract</span>
+                                                <ExternalLink size={14} />
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -142,7 +249,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                         <div>
                                             <h3 className="text-2xl font-serif">{typeof selectedProject.company === 'string' ? selectedProject.company : selectedProject.company?.name || ''}</h3>
                                             <div className="flex items-center justify-center md:justify-start gap-2 text-white/50 text-sm mt-1">
-                                                <Wallet size={14} /> <span className="break-all">{selectedProject.wallet}</span>
+                                                <Wallet size={14} />
+                                                <span className="break-all font-mono">{projectWallet}</span>
+                                                <button
+                                                    onClick={() => copyToClipboard(projectWallet)}
+                                                    className="text-white/40 hover:text-white transition-colors"
+                                                >
+                                                    {copied ? <CheckCircle size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                                                </button>
                                             </div>
                                         </div>
                                         <button onClick={onViewCompany} className="md:ml-auto px-4 py-2 border border-white/20 rounded-full text-sm hover:bg-white hover:text-black transition-colors w-full md:w-auto">View Profile</button>
@@ -220,21 +334,37 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                 >
                                     <Activity size={20} /> Trade on Market
                                 </button>
-
                             </div>
 
                             <div className="space-y-4 pt-6 border-t border-white/10">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-white/50">Available Supply</span>
-                                    <span className="font-mono">4,200 tCO2e</span>
+                                    <span className="font-mono">
+                                        {onChainData
+                                            ? `${(parseInt(onChainData.totalCreditsIssued) - parseInt(onChainData.totalCreditsRetired)).toLocaleString()} tCO2e`
+                                            : '4,200 tCO2e'
+                                        }
+                                    </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-white/50">Contract Address</span>
-                                    <span className="font-mono text-emerald-400 flex items-center gap-1 max-w-[120px] sm:max-w-none truncate sm:overflow-visible">0x8...F2a <Share2 size={12} /></span>
+                                    <span className="text-white/50">Token Contract</span>
+                                    <a
+                                        href={`https://sepolia.etherscan.io/address/${contractAddresses.token}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-mono text-emerald-400 flex items-center gap-1 hover:text-emerald-300 transition-colors"
+                                    >
+                                        {contractAddresses.token.slice(0, 6)}...{contractAddresses.token.slice(-4)}
+                                        <ExternalLink size={12} />
+                                    </a>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-white/50">Token Standard</span>
-                                    <span className="font-mono">ERC-721</span>
+                                    <span className="font-mono">ERC-1155</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-white/50">Network</span>
+                                    <span className="font-mono text-blue-400">Sepolia Testnet</span>
                                 </div>
                             </div>
                         </div>

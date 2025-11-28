@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Wind, Search } from 'lucide-react';
+import { Wind, Search, Loader2, RefreshCw } from 'lucide-react';
 import MarketCard from '../components/MarketCard';
 import { api } from '../api/client';
+import { contractService } from '../services/contractService';
 
 interface MarketplaceViewProps {
     handleProjectClick: (project: any) => void;
@@ -17,43 +18,57 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
     const [availableRegions, setAvailableRegions] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [totalOnChainProjects, setTotalOnChainProjects] = useState<number>(0);
 
-    // Fetch credits from backend
+    // Fetch credits from backend and on-chain data
     useEffect(() => {
-        const fetchCredits = async () => {
-            try {
-                setIsLoading(true);
-                const data = await api.credits.getAll();
-                setCredits(data);
-
-                // Extract unique types and regions from data
-                const types = Array.from(new Set(data.map((c: any) => c.type))).filter(Boolean) as string[];
-                const regions = Array.from(new Set(data.map((c: any) => c.location))).filter(Boolean) as string[];
-
-                setAvailableTypes(types);
-                setAvailableRegions(regions);
-
-                setError(null);
-            } catch (err: any) {
-                console.error('Failed to fetch credits:', err);
-                setError('Failed to load credits. Using local data.');
-                // Fallback to mock data
-                const { credits: mockCredits } = await import('../data/mockData');
-                setCredits(mockCredits);
-
-                // Extract unique types and regions from mock data
-                const types = Array.from(new Set(mockCredits.map((c: any) => c.type))).filter(Boolean) as string[];
-                const regions = Array.from(new Set(mockCredits.map((c: any) => c.location))).filter(Boolean) as string[];
-
-                setAvailableTypes(types);
-                setAvailableRegions(regions);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchCredits();
     }, []);
+
+    const fetchCredits = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            // Try to get total projects from chain
+            try {
+                if (contractService.isWalletAvailable()) {
+                    await contractService.connectWallet();
+                    const total = await contractService.getTotalProjects();
+                    setTotalOnChainProjects(total);
+                }
+            } catch (chainErr) {
+                console.log('Chain connection optional:', chainErr);
+            }
+
+            // Fetch from backend API
+            const data = await api.credits.getAll();
+            setCredits(data);
+
+            // Extract unique types and regions from data
+            const types = Array.from(new Set(data.map((c: any) => c.type))).filter(Boolean) as string[];
+            const regions = Array.from(new Set(data.map((c: any) => c.location))).filter(Boolean) as string[];
+
+            setAvailableTypes(types);
+            setAvailableRegions(regions);
+        } catch (err: any) {
+            console.error('Failed to fetch credits:', err);
+            setError('Failed to load credits from server. Showing demo data.');
+
+            // Fallback to mock data
+            const { credits: mockCredits } = await import('../data/mockData');
+            setCredits(mockCredits);
+
+            // Extract unique types and regions from mock data
+            const types = Array.from(new Set(mockCredits.map((c: any) => c.type))).filter(Boolean) as string[];
+            const regions = Array.from(new Set(mockCredits.map((c: any) => c.location))).filter(Boolean) as string[];
+
+            setAvailableTypes(types);
+            setAvailableRegions(regions);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const toggleType = (type: string) => {
         setSelectedTypes(prev =>
@@ -74,7 +89,7 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
             const matchesType = selectedTypes.length === 0 || selectedTypes.includes(credit.type);
 
             // Region Filter
-            const matchesRegion = selectedRegion === 'All Regions' || credit.location.includes(selectedRegion);
+            const matchesRegion = selectedRegion === 'All Regions' || credit.location?.includes(selectedRegion);
 
             // Price Filter
             const price = parseFloat(credit.price);
@@ -84,12 +99,33 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
 
             return matchesSearch && matchesType && matchesRegion && matchesPrice;
         });
-    }, [searchQuery, selectedTypes, selectedRegion, priceRange, credits]); return (
+    }, [searchQuery, selectedTypes, selectedRegion, priceRange, credits]);
+
+    return (
         <div className="pt-32 px-6 pb-20 min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-12">
-                    <h1 className="font-serif text-5xl mb-4">Global Marketplace</h1>
-                    <p className="text-white/50 text-lg">Trade verified carbon credits directly on-chain.</p>
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                        <div>
+                            <h1 className="font-serif text-5xl mb-4">Global Marketplace</h1>
+                            <p className="text-white/50 text-lg">Trade verified carbon credits directly on-chain.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {totalOnChainProjects > 0 && (
+                                <div className="text-right">
+                                    <div className="text-xs text-white/40 uppercase tracking-wider">On-Chain Projects</div>
+                                    <div className="text-2xl font-serif text-emerald-400">{totalOnChainProjects}</div>
+                                </div>
+                            )}
+                            <button
+                                onClick={fetchCredits}
+                                disabled={isLoading}
+                                className="p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50"
+                            >
+                                <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+                    </div>
                     {error && (
                         <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-sm">
                             {error}
@@ -109,17 +145,21 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                                 <div>
                                     <h4 className="text-sm font-medium mb-3 text-white/80">Project Type</h4>
                                     <div className="space-y-2">
-                                        {availableTypes.map((t, index) => (
-                                            <label key={`${t}-${index}`} className="flex items-center gap-2 text-sm text-white/50 hover:text-white cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedTypes.includes(t)}
-                                                    onChange={() => toggleType(t)}
-                                                    className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-0"
-                                                />
-                                                {t}
-                                            </label>
-                                        ))}
+                                        {availableTypes.length > 0 ? (
+                                            availableTypes.map((t, index) => (
+                                                <label key={`${t}-${index}`} className="flex items-center gap-2 text-sm text-white/50 hover:text-white cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedTypes.includes(t)}
+                                                        onChange={() => toggleType(t)}
+                                                        className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-0"
+                                                    />
+                                                    {t}
+                                                </label>
+                                            ))
+                                        ) : (
+                                            <p className="text-white/30 text-sm">No types available</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -138,7 +178,7 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                                 </div>
 
                                 <div>
-                                    <h4 className="text-sm font-medium mb-3 text-white/80">Price Range</h4>
+                                    <h4 className="text-sm font-medium mb-3 text-white/80">Price Range (USD)</h4>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
@@ -157,6 +197,42 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                                         />
                                     </div>
                                 </div>
+
+                                {(selectedTypes.length > 0 || selectedRegion !== 'All Regions' || priceRange.min || priceRange.max) && (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedTypes([]);
+                                            setSelectedRegion('All Regions');
+                                            setPriceRange({ min: '', max: '' });
+                                        }}
+                                        className="w-full text-sm text-white/40 hover:text-white py-2 border border-white/10 rounded-lg hover:border-white/20 transition-colors"
+                                    >
+                                        Clear Filters
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Contract Info */}
+                        <div className="bg-[#0a0a0a]/50 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+                            <h4 className="text-sm font-medium mb-4 text-white/80">Contract Info</h4>
+                            <div className="space-y-3 text-xs">
+                                <div>
+                                    <div className="text-white/40 mb-1">Network</div>
+                                    <div className="text-emerald-400 font-mono">Sepolia Testnet</div>
+                                </div>
+                                <div>
+                                    <div className="text-white/40 mb-1">Token Contract</div>
+                                    <div className="text-white/60 font-mono truncate" title={contractService.getContractAddresses().token}>
+                                        {contractService.getContractAddresses().token.slice(0, 10)}...
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-white/40 mb-1">Marketplace</div>
+                                    <div className="text-white/60 font-mono truncate" title={contractService.getContractAddresses().marketplace}>
+                                        {contractService.getContractAddresses().marketplace.slice(0, 10)}...
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -165,7 +241,11 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                     <div className="flex-1">
                         <div className="flex justify-between items-center mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
                             <div className="text-sm text-white/50">
-                                {isLoading ? 'Loading...' : (
+                                {isLoading ? (
+                                    <span className="flex items-center gap-2">
+                                        <Loader2 size={14} className="animate-spin" /> Loading...
+                                    </span>
+                                ) : (
                                     <>Showing <span className="text-white">{filteredCredits.length}</span> active listings</>
                                 )}
                             </div>
@@ -174,7 +254,7 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={16} />
                                     <input
                                         type="text"
-                                        placeholder="Search by name or ID..."
+                                        placeholder="Search by name or company..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="bg-black/20 border border-white/10 rounded-full pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-white/30 w-64"
@@ -200,8 +280,19 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                                         <MarketCard key={credit.id} credit={credit} onClick={() => handleProjectClick(credit)} />
                                     ))
                                 ) : (
-                                    <div className="col-span-full text-center py-20 text-white/30">
-                                        No projects found matching your criteria.
+                                    <div className="col-span-full text-center py-20">
+                                        <div className="text-white/30 mb-4">No projects found matching your criteria.</div>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedTypes([]);
+                                                setSelectedRegion('All Regions');
+                                                setPriceRange({ min: '', max: '' });
+                                                setSearchQuery('');
+                                            }}
+                                            className="text-emerald-400 hover:text-emerald-300 text-sm"
+                                        >
+                                            Clear all filters
+                                        </button>
                                     </div>
                                 )}
                             </div>
