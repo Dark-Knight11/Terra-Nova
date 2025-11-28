@@ -12,7 +12,9 @@ class Web3Service {
                 throw new Error('ETHEREUM_RPC_URL not configured');
             }
             this.provider = new ethers.JsonRpcProvider(rpcUrl);
-            Logger.info('Ethereum provider initialized', { rpcUrl });
+            // Increase polling interval to avoid rate limiting (default is 4000ms)
+            this.provider.pollingInterval = 12000;
+            Logger.info('Ethereum provider initialized', { rpcUrl, pollingInterval: this.provider.pollingInterval });
         }
         return this.provider;
     }
