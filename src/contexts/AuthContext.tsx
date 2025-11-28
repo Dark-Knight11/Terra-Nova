@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const linkWallet = async (address: string, signature: string, message: string) => {
         try {
-            const response = await api.auth.linkWallet({ message, signature, walletAddress: address });
+            const response = await api.auth.linkWallet({ message, signature });
             // Update user with new wallet info
             if (user) {
                 // @ts-ignore

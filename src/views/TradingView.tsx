@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { contractService, AuctionType, AuctionStatus, type Listing } from '../services/contractService';
 import { Loader2, TrendingUp, DollarSign, Activity, Clock, Gavel, Tag, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+
 
 interface Trade {
     price: string;
@@ -15,11 +15,9 @@ interface TradingViewProps {
 }
 
 const TradingView: React.FC<TradingViewProps> = ({ projectId, onBack }) => {
-    const { user } = useAuth();
     const [listings, setListings] = useState<Listing[]>([]);
     const [trades, setTrades] = useState<Trade[]>([]);
     const [loading, setLoading] = useState(true);
-    const [action, setAction] = useState<'buy' | 'sell'>('buy');
     const [listingType, setListingType] = useState<'fixed' | 'english' | 'dutch'>('fixed');
     const [price, setPrice] = useState('');
     const [amount, setAmount] = useState('');
@@ -182,26 +180,7 @@ const TradingView: React.FC<TradingViewProps> = ({ projectId, onBack }) => {
         }
     };
 
-    const handlePlaceBid = async (listing: Listing, bidAmount: string) => {
-        if (!walletConnected) {
-            await connectWallet();
-            return;
-        }
 
-        setSubmitting(true);
-        setError(null);
-
-        try {
-            await contractService.placeBid(listing.listingId, bidAmount);
-            setSuccess('Bid placed successfully!');
-            await fetchMarketData();
-        } catch (err: any) {
-            console.error('Bid failed', err);
-            setError(err.message || 'Bid failed');
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
     const getAuctionTypeLabel = (type: number) => {
         switch (type) {
@@ -212,14 +191,7 @@ const TradingView: React.FC<TradingViewProps> = ({ projectId, onBack }) => {
         }
     };
 
-    const getStatusLabel = (status: number) => {
-        switch (status) {
-            case AuctionStatus.Active: return 'Active';
-            case AuctionStatus.Completed: return 'Completed';
-            case AuctionStatus.Cancelled: return 'Cancelled';
-            default: return 'Unknown';
-        }
-    };
+
 
     const formatTimeRemaining = (endTime: number) => {
         const now = Math.floor(Date.now() / 1000);

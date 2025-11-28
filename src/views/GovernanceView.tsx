@@ -5,11 +5,11 @@ import { contractService } from '../services/contractService';
 import { useAuth } from '../contexts/AuthContext';
 
 const GovernanceView = () => {
-    const { user } = useAuth();
+    const { } = useAuth();
     const [proposals, setProposals] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [walletConnected, setWalletConnected] = useState(false);
-    const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
     const [votingPower, setVotingPower] = useState('0');
     const [pendingWithdrawals, setPendingWithdrawals] = useState('0');
     const [withdrawing, setWithdrawing] = useState(false);
@@ -37,9 +37,9 @@ const GovernanceView = () => {
         // Check wallet connection
         try {
             if (contractService.isWalletAvailable()) {
-                const address = await contractService.connectWallet();
+                await contractService.connectWallet();
                 setWalletConnected(true);
-                setWalletAddress(address);
+
 
                 // Get voting power (total token balance)
                 const balance = await contractService.getTotalBalance();
@@ -59,9 +59,9 @@ const GovernanceView = () => {
     const connectWallet = async () => {
         try {
             setError(null);
-            const address = await contractService.connectWallet();
+            await contractService.connectWallet();
             setWalletConnected(true);
-            setWalletAddress(address);
+
 
             const balance = await contractService.getTotalBalance();
             setVotingPower(balance);
