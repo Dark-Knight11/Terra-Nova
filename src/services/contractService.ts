@@ -167,6 +167,26 @@ export class ContractService {
         }
     }
 
+    private async retry<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+        try {
+            return await operation();
+        } catch (error: any) {
+            if (retries > 0) {
+                // Check if it's a rate limit or network error
+                const isNetworkError = error.message?.includes('rate limited') ||
+                    error.code === 'CALL_EXCEPTION' ||
+                    error.code === 'NETWORK_ERROR';
+
+                if (isNetworkError) {
+                    console.warn(`Operation failed, retrying in ${delay}ms... (${retries} retries left)`, error.message);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return this.retry(operation, retries - 1, delay * 2);
+                }
+            }
+            throw error;
+        }
+    }
+
     // Check if wallet is available
     isWalletAvailable(): boolean {
         return typeof window !== 'undefined' && !!window.ethereum;
@@ -179,9 +199,17 @@ export class ContractService {
 
     // Check if on correct network
     async checkNetwork(): Promise<boolean> {
-        if (!this.provider) return false;
-        const network = await this.provider.getNetwork();
-        return Number(network.chainId) === SEPOLIA_CHAIN_ID;
+        if (!window.ethereum) return false;
+        try {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            // Convert hex chainId to decimal number
+            const currentChainId = parseInt(chainId as string, 16);
+            console.log('Current Chain ID:', currentChainId, 'Expected:', SEPOLIA_CHAIN_ID);
+            return currentChainId === SEPOLIA_CHAIN_ID;
+        } catch (err) {
+            console.error('Error checking network:', err);
+            return false;
+        }
     }
 
     // Switch to Sepolia network
@@ -227,6 +255,13 @@ export class ContractService {
         this.signer = await this.provider.getSigner();
         this.connectedAddress = await this.signer.getAddress();
 
+        console.log('Connected to wallet:', this.connectedAddress);
+        console.log('Initializing contracts with addresses:', {
+            token: TOKEN_ADDRESS,
+            marketplace: MARKETPLACE_ADDRESS,
+            nft: NFT_ADDRESS
+        });
+
         this.marketplaceContract = new ethers.Contract(MARKETPLACE_ADDRESS, MARKETPLACE_ABI, this.signer);
         this.tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, this.signer);
         this.nftContract = new ethers.Contract(NFT_ADDRESS, NFT_ABI, this.signer);
@@ -263,6 +298,21 @@ export class ContractService {
         await this.ensureConnected();
         const balance = await this.tokenContract!['balanceOf(address)'](this.connectedAddress);
         return balance.toString();
+    }
+
+    // ...
+
+    async getTotalProjects(): Promise<number> {
+        await this.ensureConnected();
+        try {
+            console.log('Calling getTotalProjects on contract:', TOKEN_ADDRESS);
+            const total = await this.tokenContract!.getTotalProjects();
+            console.log('getTotalProjects result:', total);
+            return Number(total);
+        } catch (error) {
+            console.error('Error in getTotalProjects:', error);
+            throw error;
+        }
     }
 
     async submitProject(
@@ -304,16 +354,34 @@ export class ContractService {
         return { txHash: receipt.hash, projectId };
     }
 
+    async mintCredits(projectId: string, amount: string): Promise<string> {
+        await this.ensureConnected();
+        // For demo purposes, using a hardcoded mock report hash
+        const reportHash = "ipfs://mock-report-" + Date.now();
+        const tx = await this.tokenContract!.mintCredits(projectId, amount, reportHash);
+        const receipt = await tx.wait();
+        return receipt.hash;
+    }
+
     async getProjectInfo(projectId: string): Promise<ProjectInfo | null> {
         await this.ensureConnected();
 
         try {
-            const exists = await this.tokenContract!.projectExists(projectId);
+            console.log(`Checking if project ${projectId} exists...`);
+            const exists = await this.retry(() => this.tokenContract!.projectExists(projectId));
+            console.log(`Project ${projectId} exists: ${exists}`);
+
             if (!exists) return null;
 
-            const basicInfo = await this.tokenContract!.getProjectBasicInfo(projectId);
-            const details = await this.tokenContract!.getProjectDetailsStruct(projectId);
-            const credits = await this.tokenContract!.getProjectCredits(projectId);
+            console.log(`Fetching basic info for project ${projectId}...`);
+            const basicInfo = await this.retry(() => this.tokenContract!.getProjectBasicInfo(projectId));
+            console.log('Basic info received:', basicInfo);
+
+            console.log(`Fetching details for project ${projectId}...`);
+            const details = await this.retry(() => this.tokenContract!.getProjectDetailsStruct(projectId));
+
+            console.log(`Fetching credits for project ${projectId}...`);
+            const credits = await this.retry(() => this.tokenContract!.getProjectCredits(projectId));
 
             return {
                 projectId: basicInfo.projectId.toString(),
@@ -333,22 +401,29 @@ export class ContractService {
                 totalCreditsRetired: credits.totalCreditsRetired.toString()
             };
         } catch (error) {
-            console.error('Error fetching project info:', error);
+            console.error(`Error fetching project info for ${projectId}:`, error);
+            // Log the contract address we are trying to call
+            console.error('Contract address:', this.tokenContract?.target);
             return null;
         }
     }
 
     async getDeveloperProjects(): Promise<string[]> {
         await this.ensureConnected();
-        const projectIds = await this.tokenContract!.getDeveloperProjects(this.connectedAddress);
-        return projectIds.map((id: bigint) => id.toString());
+        console.log(`Fetching developer projects for ${this.connectedAddress}...`);
+        try {
+            const projectIds = await this.retry(() => this.tokenContract!.getDeveloperProjects(this.connectedAddress));
+            console.log('Developer projects raw:', projectIds);
+            const mapped = projectIds.map((id: bigint) => id.toString());
+            console.log('Developer projects mapped:', mapped);
+            return mapped;
+        } catch (error) {
+            console.error('Error fetching developer projects:', error);
+            return [];
+        }
     }
 
-    async getTotalProjects(): Promise<number> {
-        await this.ensureConnected();
-        const total = await this.tokenContract!.getTotalProjects();
-        return Number(total);
-    }
+
 
     // ==================== MARKETPLACE CONTRACT FUNCTIONS ====================
 

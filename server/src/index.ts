@@ -64,27 +64,19 @@ app.listen(PORT, () => {
         Logger.error('Failed to start Contract Service listeners', err);
     });
 
-    // Start Market Maker Agent
-    import('./agents/marketMaker.agent').then(({ default: agent }) => {
-        agent.start();
-        Logger.info('Market Maker Agent started');
-    }).catch(err => {
-        Logger.error('Failed to start Market Maker Agent', err);
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+        Logger.error('Unhandled Rejection', { reason, promise });
+        // In production, you might want to exit the process
+        // process.exit(1);
     });
-});
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-    Logger.error('Unhandled Rejection', { reason, promise });
-    // In production, you might want to exit the process
-    // process.exit(1);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error: Error) => {
-    Logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
-    // Exit process for uncaught exceptions
-    process.exit(1);
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (error: Error) => {
+        Logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
+        // Exit process for uncaught exceptions
+        process.exit(1);
+    });
 });
 
 export default app;
