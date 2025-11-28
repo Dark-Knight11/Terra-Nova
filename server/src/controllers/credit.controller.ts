@@ -37,7 +37,7 @@ export const getCredits = asyncHandler(async (req: Request, res: Response) => {
         take: limit ? Number(limit) : undefined
     });
 
-    res.json({
+    res.status(200).json({
         success: true,
         data: credits
     });

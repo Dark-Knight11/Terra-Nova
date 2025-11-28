@@ -16,7 +16,11 @@ const PORT = process.env.PORT || 3002;
 app.use(helmet());
 
 // CORS configuration
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
+// CORS configuration
+const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const envOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
+const corsOrigin = [...defaultOrigins, ...envOrigin];
+
 app.use(cors({
     origin: corsOrigin,
     credentials: true,

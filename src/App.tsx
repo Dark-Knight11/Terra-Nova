@@ -10,6 +10,8 @@ import GovernanceView from './views/GovernanceView';
 import ProjectDetailView from './views/ProjectDetailView';
 import AboutView from './views/AboutView';
 import ProfileView from './views/ProfileView';
+import CompanyProfileView from './views/CompanyProfileView';
+import DashboardView from './views/DashboardView';
 
 const App = () => {
   // --- State ---
@@ -144,7 +146,21 @@ const App = () => {
           {activeTab === 'governance' && <GovernanceView />}
           {activeTab === 'about' && <AboutView />}
           {activeTab === 'profile' && <ProfileView />}
-          {activeTab === 'detail' && selectedProject && <ProjectDetailView selectedProject={selectedProject} setActiveTab={setActiveTab} handleProjectClick={handleProjectClick} />}
+          {activeTab === 'dashboard' && <DashboardView />}
+          {activeTab === 'company' && selectedProject?.company && (
+            <CompanyProfileView
+              company={selectedProject.company}
+              onBack={() => setActiveTab('detail')}
+            />
+          )}
+          {activeTab === 'detail' && selectedProject && (
+            <ProjectDetailView
+              selectedProject={selectedProject}
+              setActiveTab={setActiveTab}
+              handleProjectClick={handleProjectClick}
+              onViewCompany={() => setActiveTab('company')}
+            />
+          )}
         </main>
 
         <footer className="border-t border-white/10 bg-[#020202] pt-20 pb-10 px-6 mt-auto">

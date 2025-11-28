@@ -6,9 +6,10 @@ interface ProjectDetailViewProps {
     selectedProject: any;
     setActiveTab: (tab: string) => void;
     handleProjectClick: (project: any) => void;
+    onViewCompany: () => void;
 }
 
-const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick }) => {
+const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick, onViewCompany }) => {
     const [detailTab, setDetailTab] = useState('overview'); // overview, audit, company
     const [credits, setCredits] = useState<any[]>([]);
 
@@ -135,15 +136,15 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                 <div className="space-y-8 animate-fade-in">
                                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
                                         <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-2xl font-serif">
-                                            {selectedProject.company.charAt(0)}
+                                            {(typeof selectedProject.company === 'string' ? selectedProject.company : selectedProject.company?.name || '').charAt(0)}
                                         </div>
                                         <div>
-                                            <h3 className="text-2xl font-serif">{selectedProject.company}</h3>
+                                            <h3 className="text-2xl font-serif">{typeof selectedProject.company === 'string' ? selectedProject.company : selectedProject.company?.name || ''}</h3>
                                             <div className="flex items-center justify-center md:justify-start gap-2 text-white/50 text-sm mt-1">
                                                 <Wallet size={14} /> <span className="break-all">{selectedProject.wallet}</span>
                                             </div>
                                         </div>
-                                        <button className="md:ml-auto px-4 py-2 border border-white/20 rounded-full text-sm hover:bg-white hover:text-black transition-colors w-full md:w-auto">View Profile</button>
+                                        <button onClick={onViewCompany} className="md:ml-auto px-4 py-2 border border-white/20 rounded-full text-sm hover:bg-white hover:text-black transition-colors w-full md:w-auto">View Profile</button>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -169,17 +170,25 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                     </div>
 
                                     <div>
-                                        <h4 className="text-sm text-white/40 uppercase tracking-widest mb-4">Other Projects by {selectedProject.company}</h4>
+                                        <h4 className="text-sm text-white/40 uppercase tracking-widest mb-4">Other Projects by {typeof selectedProject.company === 'string' ? selectedProject.company : selectedProject.company?.name || ''}</h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {credits.filter(c => c.company === selectedProject.company && c.id !== selectedProject.id).map(c => (
+                                            {credits.filter(c => {
+                                                const cCompany = typeof c.company === 'string' ? c.company : c.company?.name || '';
+                                                const pCompany = typeof selectedProject.company === 'string' ? selectedProject.company : selectedProject.company?.name || '';
+                                                return cCompany === pCompany && c.id !== selectedProject.id;
+                                            }).map(c => (
                                                 <div key={c.id} onClick={() => handleProjectClick(c)} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
                                                     <div className="w-10 h-10 rounded bg-cover bg-center flex-shrink-0" style={{ background: c.image }}></div>
                                                     <div className="text-sm font-medium truncate">{c.title}</div>
                                                 </div>
                                             ))}
-                                            {credits.filter(c => c.company === selectedProject.company && c.id !== selectedProject.id).length === 0 && (
-                                                <div className="text-sm text-white/30 italic">No other active listings.</div>
-                                            )}
+                                            {credits.filter(c => {
+                                                const cCompany = typeof c.company === 'string' ? c.company : c.company?.name || '';
+                                                const pCompany = typeof selectedProject.company === 'string' ? selectedProject.company : selectedProject.company?.name || '';
+                                                return cCompany === pCompany && c.id !== selectedProject.id;
+                                            }).length === 0 && (
+                                                    <div className="text-sm text-white/30 italic">No other active listings.</div>
+                                                )}
                                         </div>
                                     </div>
                                 </div>
@@ -207,9 +216,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                                 <button className="w-full py-4 bg-white text-black rounded-lg font-medium hover:scale-[1.02] transition-transform text-lg">
                                     Purchase Credits
                                 </button>
-                                <button className="w-full py-4 bg-transparent border border-white/20 text-white rounded-lg font-medium hover:bg-white/5 transition-colors">
-                                    Place Bid
-                                </button>
+
                             </div>
 
                             <div className="space-y-4 pt-6 border-t border-white/10">

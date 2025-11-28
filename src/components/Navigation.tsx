@@ -72,6 +72,12 @@ const Navigation: React.FC<NavigationProps> = ({
                     {isAuthenticated ? (
                         <div className="hidden md:flex items-center gap-3">
                             <button
+                                onClick={() => setActiveTab('dashboard')}
+                                className={`text-sm uppercase tracking-widest transition-colors mr-4 ${activeTab === 'dashboard' ? 'text-white font-medium' : 'text-white/60 hover:text-white'}`}
+                            >
+                                Dashboard
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('profile')}
                                 className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors group"
                             >
@@ -124,6 +130,15 @@ const Navigation: React.FC<NavigationProps> = ({
 
                         {isAuthenticated ? (
                             <>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('dashboard');
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className={`text-left py-4 border-b border-white/10 transition-colors ${activeTab === 'dashboard' ? 'text-white' : 'text-white/50'}`}
+                                >
+                                    Dashboard
+                                </button>
                                 <button
                                     onClick={() => {
                                         setActiveTab('profile');
