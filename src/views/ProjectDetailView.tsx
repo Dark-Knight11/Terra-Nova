@@ -7,9 +7,10 @@ interface ProjectDetailViewProps {
     setActiveTab: (tab: string) => void;
     handleProjectClick: (project: any) => void;
     onViewCompany: () => void;
+    onTrade: () => void;
 }
 
-const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick, onViewCompany }) => {
+const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick, onViewCompany, onTrade }) => {
     const [detailTab, setDetailTab] = useState('overview'); // overview, audit, company
     const [credits, setCredits] = useState<any[]>([]);
 
@@ -213,8 +214,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                             </div>
 
                             <div className="space-y-4 mb-8">
-                                <button className="w-full py-4 bg-white text-black rounded-lg font-medium hover:scale-[1.02] transition-transform text-lg">
-                                    Purchase Credits
+                                <button
+                                    onClick={onTrade}
+                                    className="w-full py-4 bg-white text-black rounded-lg font-medium hover:scale-[1.02] transition-transform text-lg flex items-center justify-center gap-2"
+                                >
+                                    <Activity size={20} /> Trade on Market
                                 </button>
 
                             </div>

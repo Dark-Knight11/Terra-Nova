@@ -209,3 +209,43 @@ model Proposal {
   @@index([status])
   @@index([createdAt])
 }
+
+enum ListingStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Listing {
+  id            String        @id @default(uuid())
+  listingId     String        @unique // On-chain listing ID
+  projectId     String        // Token ID
+  seller        String        // Wallet address
+  amount        String        // BigInt as String
+  price         String        // Price in Wei (BigInt as String)
+  status        ListingStatus @default(ACTIVE)
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([projectId])
+  @@index([seller])
+  @@index([status])
+}
+
+model Trade {
+  id            String   @id @default(uuid())
+  listingId     String   // Reference to Listing
+  buyer         String   // Wallet address
+  seller        String   // Wallet address
+  projectId     String   // Token ID
+  amount        String   // Amount traded
+  price         String   // Price per unit or total price (depending on logic)
+  timestamp     DateTime @default(now())
+  
+  createdAt     DateTime @default(now())
+
+  @@index([projectId])
+  @@index([buyer])
+  @@index([seller])
+}

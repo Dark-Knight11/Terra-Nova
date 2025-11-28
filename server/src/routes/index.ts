@@ -5,6 +5,7 @@ import contractRoutes from './contract.routes';
 import creditRoutes from './credit.routes';
 import walletRoutes from './wallet.routes';
 import proposalRoutes from './proposal.routes';
+import marketRoutes from './market.routes';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/contracts', contractRoutes);
 router.use('/credits', creditRoutes);
 router.use('/wallets', walletRoutes);
 router.use('/proposals', proposalRoutes);
+router.use('/market', marketRoutes);
 
 // TODO: Add auditor and registry routes when implemented
 // router.use('/auditors', auditorRoutes);

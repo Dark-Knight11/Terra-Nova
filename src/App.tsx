@@ -12,6 +12,7 @@ import AboutView from './views/AboutView';
 import ProfileView from './views/ProfileView';
 import CompanyProfileView from './views/CompanyProfileView';
 import DashboardView from './views/DashboardView';
+import TradingView from './views/TradingView';
 
 const App = () => {
   // --- State ---
@@ -159,6 +160,13 @@ const App = () => {
               setActiveTab={setActiveTab}
               handleProjectClick={handleProjectClick}
               onViewCompany={() => setActiveTab('company')}
+              onTrade={() => setActiveTab('trading')}
+            />
+          )}
+          {activeTab === 'trading' && selectedProject && (
+            <TradingView
+              projectId={selectedProject.id || selectedProject.projectId}
+              onBack={() => setActiveTab('detail')}
             />
           )}
         </main>

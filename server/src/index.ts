@@ -55,6 +55,14 @@ app.listen(PORT, () => {
         environment: process.env.NODE_ENV || 'development',
         corsOrigin
     });
+
+    // Initialize Contract Service Listeners
+    import('./services/contract.service').then(({ default: contractService }) => {
+        contractService.listenForMarketEvents();
+        Logger.info('Contract Service listeners started');
+    }).catch(err => {
+        Logger.error('Failed to start Contract Service listeners', err);
+    });
 });
 
 // Handle unhandled promise rejections
