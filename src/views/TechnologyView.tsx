@@ -13,49 +13,49 @@ const DataFlowDiagram = () => {
                     </defs>
 
                     {/* User -> Frontend */}
-                    <path d="M 100 100 L 200 100" stroke="#4B5563" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
-                    <circle r="3" fill="#10B981"><animateMotion dur="2s" repeatCount="indefinite" path="M 100 100 L 200 100" /></circle>
+                    <path d="M 200 100 L 300 100" stroke="#4B5563" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
+                    <circle r="3" fill="#10B981"><animateMotion dur="2s" repeatCount="indefinite" path="M 200 100 L 300 100" /></circle>
 
                     {/* Frontend <-> Backend */}
-                    <path d="M 250 100 L 380 100" stroke="#4B5563" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
-                    <circle r="3" fill="#3B82F6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.5s" path="M 250 100 L 380 100" /></circle>
+                    <path d="M 350 100 L 480 100" stroke="#4B5563" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
+                    <circle r="3" fill="#3B82F6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.5s" path="M 350 100 L 480 100" /></circle>
 
                     {/* Backend -> Smart Contracts */}
-                    <path d="M 500 100 L 650 60" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <path d="M 500 100 L 650 100" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <path d="M 500 100 L 650 140" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <path d="M 600 100 L 750 60" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <path d="M 600 100 L 750 100" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <path d="M 600 100 L 750 140" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
 
                     {/* Backend -> Agentic Layer (Orchestrator) */}
-                    <path d="M 440 150 L 462 349" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 440 150 L 462 349" /></circle>
+                    <path d="M 540 150 L 562 349" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 540 150 L 562 349" /></circle>
 
                     {/* Orchestrator -> Wallet Analyser */}
-                    <path d="M 460 370 L 236 473" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 460 370 L 236 473" /></circle>
+                    <path d="M 560 370 L 336 473" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 560 370 L 336 473" /></circle>
 
                     {/* Orchestrator -> Scoring Engine */}
-                    <path d="M 465 380 L 410 553" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 465 380 L 410 553" /></circle>
+                    <path d="M 565 380 L 510 553" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 565 380 L 510 553" /></circle>
 
                     {/* Orchestrator -> Scheduler */}
-                    <path d="M 480 380 L 558 553" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 480 380 L 558 553" /></circle>
+                    <path d="M 580 380 L 658 553" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 580 380 L 658 553" /></circle>
 
                     {/* Orchestrator -> Persister */}
-                    <path d="M 484 370 L 698 463" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
-                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 484 370 L 698 463" /></circle>
+                    <path d="M 584 370 L 798 463" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 584 370 L 798 463" /></circle>
 
                     {/* Wallets -> Analyser */}
-                    <path d="M 90 495 L 222 471" stroke="#3B82F6" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <path d="M 190 495 L 322 471" stroke="#3B82F6" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
 
                     {/* Persister -> Smart Contracts */}
-                    <path d="M 710 457 C 790 400, 810 250, 750 140" stroke="#EF4444" strokeWidth="1" markerEnd="url(#arrowhead)" strokeDasharray="3,3" opacity="1.0" fill="none" />
-                    <circle r="2" fill="#EF4444"><animateMotion dur="4s" repeatCount="indefinite" begin="2s" path="M 710 457 C 790 400, 810 250, 750 140" /></circle>
+                    <path d="M 810 457 C 890 400, 910 250, 850 140" stroke="#EF4444" strokeWidth="1" markerEnd="url(#arrowhead)" strokeDasharray="3,3" opacity="1.0" fill="none" />
+                    <circle r="2" fill="#EF4444"><animateMotion dur="4s" repeatCount="indefinite" begin="2s" path="M 810 457 C 890 400, 910 250, 850 140" /></circle>
 
                 </svg>
 
                 {/* User */}
-                <div className="absolute left-[50px] top-[70px] flex flex-col items-center gap-2">
+                <div className="absolute left-[150px] top-[70px] flex flex-col items-center gap-2">
                     <div className="w-14 h-14 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
                         <User className="text-emerald-400" size={20} />
                     </div>
@@ -63,7 +63,7 @@ const DataFlowDiagram = () => {
                 </div>
 
                 {/* Frontend */}
-                <div className="absolute left-[200px] top-[70px] flex flex-col items-center gap-2">
+                <div className="absolute left-[300px] top-[70px] flex flex-col items-center gap-2">
                     <div className="w-14 h-14 rounded-lg bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
                         <Globe className="text-blue-400" size={20} />
                     </div>
@@ -71,7 +71,7 @@ const DataFlowDiagram = () => {
                 </div>
 
                 {/* Backend */}
-                <div className="absolute left-[380px] top-[55px] flex flex-col items-center gap-2">
+                <div className="absolute left-[480px] top-[55px] flex flex-col items-center gap-2">
                     <div className="w-28 h-20 rounded-lg bg-[#0a0a0a] border border-white/10 flex flex-col items-center justify-center px-2">
                         <Server className="text-purple-400" size={24} />
                         <span className="text-[8px] text-white/40 mt-1">Auth • Calls</span>
@@ -80,7 +80,7 @@ const DataFlowDiagram = () => {
                 </div>
 
                 {/* Smart Contracts Cluster */}
-                <div className="absolute left-[650px] top-[20px] p-4 border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm w-[200px]">
+                <div className="absolute left-[750px] top-[20px] p-4 border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm w-[200px]">
                     <div className="text-[10px] uppercase tracking-widest text-white/30 mb-3 text-center">Smart Contracts</div>
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 px-2 py-1 bg-black/30 rounded border border-orange-500/20">
@@ -99,7 +99,7 @@ const DataFlowDiagram = () => {
                 </div>
 
                 {/* Agentic Layer Box */}
-                <div className="absolute top-[265px] left-[20px] right-[20px] bottom-[20px] border border-emerald-500/10 rounded-3xl bg-emerald-500/[0.02]">
+                <div className="absolute top-[265px] left-[120px] right-[200px] bottom-[20px] border border-emerald-500/10 rounded-3xl bg-emerald-500/[0.02]">
                     <div className="absolute top-3 left-5 text-[10px] uppercase tracking-widest text-emerald-400/60">5-Agent System</div>
 
                     {/* Orchestrator (Center) */}
