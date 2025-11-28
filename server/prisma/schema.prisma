@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  COMPANY
+  AUDITOR
+  REGISTRY
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String?  @unique
+  passwordHash String?
+  walletAddress String? @unique
+  role         UserRole
+  isVerified   Boolean  @default(false)
+  nonce        String?  @unique
+  nonceExpiry  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  company   Company?
+  auditor   Auditor?
+  registry  Registry?
+  sessions  Session[]
+
+  @@index([email])
+  @@index([walletAddress])
+  @@index([role])
+}
+
+model Company {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name               String
+  description        String?
+  verificationStatus VerificationStatus @default(PENDING)
+  walletAddress      String?            @unique
+  country            String?
+  industry           String?
+  carbonFootprint    Decimal?           @db.Decimal(15, 2)
+  credits            Decimal            @default(0) @db.Decimal(15, 2)
+  
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([verificationStatus])
+  @@index([walletAddress])
+}
+
+model Auditor {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name               String
+  certifications     String[]
+  verificationStatus VerificationStatus @default(PENDING)
+  walletAddress      String?            @unique
+  rating             Decimal?           @db.Decimal(3, 2)
+  projectsAudited    Int                @default(0)
+  
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([verificationStatus])
+  @@index([walletAddress])
+}
+
+model Registry {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name               String
+  jurisdiction       String?
+  verificationStatus VerificationStatus @default(PENDING)
+  walletAddress      String?            @unique
+  creditsIssued      Decimal            @default(0) @db.Decimal(15, 2)
+  
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([verificationStatus])
+  @@index([walletAddress])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  refreshToken String   @unique
+  expiresAt    DateTime
+  userAgent    String?
+  ipAddress    String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+}

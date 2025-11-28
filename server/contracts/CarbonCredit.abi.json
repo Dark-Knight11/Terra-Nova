@@ -1,0 +1,8 @@
+[
+    "function balanceOf(address owner) view returns (uint256)",
+    "function transfer(address to, uint256 amount) returns (bool)",
+    "function getProjectDetails(uint256 projectId) view returns (string memory name, string memory location, uint256 credits)",
+    "function mintCredits(address to, uint256 amount) returns (bool)",
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "event CreditMinted(address indexed to, uint256 amount, uint256 projectId)"
+]
