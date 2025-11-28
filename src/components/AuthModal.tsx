@@ -29,6 +29,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ showAuth, setShowAuth, authType, 
             if (!(window as any).ethereum) {
                 throw new Error('MetaMask not detected. Please install MetaMask extension.');
             }
+            // Request permissions to force account selection
+            await (window as any).ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }]
+            });
             const accounts: string[] = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
             const address = accounts[0];
             const { message: siweMessage } = await api.auth.getNonce(address);

@@ -1,22 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
-import { contractService, type ProjectInfo } from '../../services/contractService';
+import { contractService, AUDITOR_ROLE, REGISTRY_ROLE, type ProjectInfo } from '../../services/contractService';
 
 const AuditorDashboard: React.FC = () => {
     const [projects, setProjects] = useState<ProjectInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
+    const [hasAuditorRole, setHasAuditorRole] = useState<boolean>(true);
+    const [hasRegistryRole, setHasRegistryRole] = useState<boolean>(true);
+
     useEffect(() => {
+        checkRole();
         loadProjects();
     }, []);
+
+    const checkRole = async () => {
+        try {
+            const address = contractService.getConnectedAddress();
+            if (address) {
+                const isAuditor = await contractService.hasRole(AUDITOR_ROLE, address);
+                const isRegistry = await contractService.hasRole(REGISTRY_ROLE, address);
+                setHasAuditorRole(isAuditor);
+                setHasRegistryRole(isRegistry);
+            }
+        } catch (error) {
+            console.error("Failed to check role", error);
+        }
+    };
 
     const loadProjects = async () => {
         setLoading(true);
         try {
             const allProjects = await contractService.getAllProjects();
             // Filter for Submitted (0) or Under Audit (1)
-            // Assuming 0 = Submitted, 1 = Under Audit, 2 = Approved, 3 = Rejected
             const pending = allProjects.filter(p => p.status === 0 || p.status === 1);
             setProjects(pending);
         } catch (error) {
@@ -26,15 +43,37 @@ const AuditorDashboard: React.FC = () => {
         }
     };
 
-    const handleApprove = async (projectId: string) => {
-        setProcessingId(projectId);
+    const handleApprove = async (project: ProjectInfo) => {
+        if (!hasRegistryRole) {
+            alert("You do not have the Registry role required to approve projects. Please contact the admin.");
+            return;
+        }
+        setProcessingId(project.projectId);
         try {
-            await contractService.approveProject(projectId);
+            // If project is Submitted (0), we must assign it first
+            if (project.status === 0) {
+                const address = contractService.getConnectedAddress();
+                if (!address) throw new Error("Wallet not connected");
+
+                console.log("Assigning auditor...");
+                await contractService.assignAuditor(project.projectId, address);
+                // Wait a bit for the chain to update
+                await new Promise(r => setTimeout(r, 2000));
+            }
+
+            console.log("Approving project...");
+            await contractService.approveProject(project.projectId);
+
             // Refresh after approval
             await loadProjects();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to approve project", error);
-            alert("Failed to approve project. Check console for details.");
+            if (error.message.includes("AccessControl")) {
+                alert("Transaction reverted: Missing Permissions (Registry Role).");
+            } else {
+                // Check for specific revert reasons if possible
+                alert("Failed to approve project. Ensure you have the required roles and the project is in a valid state.");
+            }
         } finally {
             setProcessingId(null);
         }
@@ -62,6 +101,19 @@ const AuditorDashboard: React.FC = () => {
 
     return (
         <div className="space-y-8">
+            {(!hasAuditorRole || !hasRegistryRole) && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3 text-red-400">
+                    <AlertTriangle size={24} />
+                    <div>
+                        <h4 className="font-medium">Missing Permissions</h4>
+                        <p className="text-sm opacity-80">
+                            {!hasAuditorRole && "You are missing the Auditor Role. "}
+                            {!hasRegistryRole && "You are missing the Registry Role (required for approval). "}
+                            Please run the <code>grant_auditor_role.ts</code> script with the admin key.
+                        </p>
+                    </div>
+                </div>
+            )}
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-[#0a0a0a]/50 border border-white/10 rounded-xl p-6">
@@ -136,7 +188,7 @@ const AuditorDashboard: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <button
-                                                onClick={() => handleApprove(project.projectId)}
+                                                onClick={() => handleApprove(project)}
                                                 disabled={processingId === project.projectId}
                                                 className="text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >

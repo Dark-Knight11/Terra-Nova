@@ -8,6 +8,11 @@ const NFT_ADDRESS = import.meta.env.VITE_NFT_CONTRACT_ADDRESS || '0x15B2Ee2cc706
 // Chain ID for Sepolia
 const SEPOLIA_CHAIN_ID = 11155111;
 
+// Role Hashes
+export const AUDITOR_ROLE = ethers.keccak256(ethers.toUtf8Bytes("AUDITOR_ROLE"));
+export const REGISTRY_ROLE = "0xc2979137d1774e40fe2638d355bf7a7b092be4c67f242aad1655e1e27f9df9cc"; // From error log
+export const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
 const MARKETPLACE_ABI = [
     // Fixed Price Listing
     'function createFixedPriceListing(uint256 _projectId, uint256 _amount, uint256 _price) external returns (uint256)',
@@ -40,6 +45,10 @@ const MARKETPLACE_ABI = [
 ];
 
 const TOKEN_ABI = [
+    // Access Control
+    'function hasRole(bytes32 role, address account) view returns (bool)',
+    'function grantRole(bytes32 role, address account) external',
+
     // ERC1155 Functions
     'function setApprovalForAll(address operator, bool approved) external',
     'function isApprovedForAll(address owner, address operator) view returns (bool)',
@@ -251,6 +260,8 @@ export class ContractService {
             this.provider = new ethers.BrowserProvider(window.ethereum as any);
         }
 
+        // Request permissions to force account selection
+        await this.provider.send("wallet_requestPermissions", [{ eth_accounts: {} }]);
         await this.provider.send("eth_requestAccounts", []);
         this.signer = await this.provider.getSigner();
         this.connectedAddress = await this.signer.getAddress();
@@ -363,11 +374,21 @@ export class ContractService {
         return receipt.hash;
     }
 
-    async approveProject(projectId: string): Promise<string> {
+    async hasRole(role: string, account: string): Promise<boolean> {
+        await this.ensureConnected();
+        return await this.tokenContract!.hasRole(role, account);
+    }
+
+    async assignAuditor(projectId: string, auditorAddress: string): Promise<void> {
+        await this.ensureConnected();
+        const tx = await this.tokenContract!.assignAuditor(projectId, auditorAddress);
+        await tx.wait();
+    }
+
+    async approveProject(projectId: string): Promise<void> {
         await this.ensureConnected();
         const tx = await this.tokenContract!.approveProject(projectId);
-        const receipt = await tx.wait();
-        return receipt.hash;
+        await tx.wait();
     }
 
     async getProjectInfo(projectId: string): Promise<ProjectInfo | null> {

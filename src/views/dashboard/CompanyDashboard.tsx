@@ -212,8 +212,35 @@ const CompanyDashboard: React.FC = () => {
         );
     }
 
+    const disconnectWallet = () => {
+        setWalletConnected(false);
+        setProjects([]);
+        setListings([]);
+    };
+
     return (
         <div className="space-y-8">
+            {/* Header with Wallet Info */}
+            <div className="flex justify-between items-center bg-[#0a0a0a]/50 border border-white/10 rounded-xl p-6">
+                <div>
+                    <h2 className="text-2xl font-serif text-white">Company Dashboard</h2>
+                    <p className="text-white/40 text-sm">Manage your carbon credit projects and listings</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right hidden md:block">
+                        <div className="text-xs text-white/40 uppercase tracking-wider">Connected Wallet</div>
+                        <div className="font-mono text-emerald-400">
+                            {contractService.getConnectedAddress()?.slice(0, 6)}...{contractService.getConnectedAddress()?.slice(-4)}
+                        </div>
+                    </div>
+                    <button
+                        onClick={disconnectWallet}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg transition-colors text-sm"
+                    >
+                        Disconnect
+                    </button>
+                </div>
+            </div>
             {/* Alerts */}
             {error && (
                 <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400">
