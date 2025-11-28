@@ -18,7 +18,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isMenu
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-blue-500 flex items-center justify-center">
                     <Leaf size={16} className="text-white" />
                 </div>
-                DCCP
+                Terra Nova
             </button>
 
             <div className="hidden md:flex items-center gap-8">
