@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Share2, Shield, ExternalLink, Copy, Loader2 } from 'lucide-react';
+import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Shield, ExternalLink, Copy, Loader2 } from 'lucide-react';
+import CarbonCreditLifecycle from '../components/CarbonCreditLifecycle';
 import { api } from '../api/client';
 import { contractService } from '../services/contractService';
 
@@ -114,6 +115,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                             {detailTab === 'overview' && (
                                 <div className="space-y-6 animate-fade-in">
                                     <p className="text-white/70 leading-relaxed text-lg">{selectedProject.description}</p>
+
+                                    {/* Carbon Credit Lifecycle Visualization */}
+                                    <div className="my-8">
+                                        <CarbonCreditLifecycle currentStage={onChainData?.status ? parseInt(onChainData.status) + 1 : 5} />
+                                    </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">

@@ -63,6 +63,14 @@ app.listen(PORT, () => {
     }).catch(err => {
         Logger.error('Failed to start Contract Service listeners', err);
     });
+
+    // Start Market Maker Agent
+    import('./agents/marketMaker.agent').then(({ default: agent }) => {
+        agent.start();
+        Logger.info('Market Maker Agent started');
+    }).catch(err => {
+        Logger.error('Failed to start Market Maker Agent', err);
+    });
 });
 
 // Handle unhandled promise rejections
