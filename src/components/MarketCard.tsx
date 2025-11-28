@@ -7,10 +7,23 @@ interface MarketCardProps {
     onClick: () => void;
 }
 
-const PatternBackground: React.FC<{ type: string; id: number }> = ({ type, id }) => {
+const PatternBackground: React.FC<{ type: string; id: string | number }> = ({ type, id }) => {
+    // Generate a numeric seed from the ID
+    const numericId = useMemo(() => {
+        if (typeof id === 'number') return id;
+        let hash = 0;
+        const str = String(id);
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash);
+    }, [id]);
+
     // Deterministic random number generator based on ID
     const random = (seed: number) => {
-        const x = Math.sin(id * seed) * 10000;
+        const x = Math.sin(numericId * seed) * 10000;
         return x - Math.floor(x);
     };
 

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Activity } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import MarketCard from '../components/MarketCard';
-import { credits, wallets } from '../data/mockData';
+import { api } from '../api/client';
 
 interface HomeViewProps {
     setActiveTab: (tab: string) => void;
@@ -12,6 +12,30 @@ interface HomeViewProps {
 
 const HomeView: React.FC<HomeViewProps> = ({ setActiveTab, handleProjectClick }) => {
     const comp = useRef(null);
+    const [credits, setCredits] = useState<any[]>([]);
+    const [wallets, setWallets] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Fetch credits and wallets from API
+        const fetchData = async () => {
+            try {
+                const [creditsData, walletsData] = await Promise.all([
+                    api.credits.getAll({ limit: 4 }),
+                    api.wallets.getAll({ limit: 4 })
+                ]);
+                setCredits(creditsData);
+                setWallets(walletsData);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+                // Fallback to mock data
+                import('../data/mockData').then(({ credits: mockCredits, wallets: mockWallets }) => {
+                    setCredits(mockCredits);
+                    setWallets(mockWallets);
+                });
+            }
+        };
+        fetchData();
+    }, []);
 
     useEffect(() => {
         gsap.registerPlugin(ScrollTrigger);
@@ -92,7 +116,8 @@ const HomeView: React.FC<HomeViewProps> = ({ setActiveTab, handleProjectClick })
                         </button>
                     </div>
                     <div className="ai-graphic order-1 lg:order-2 relative perspective-[2000px]">
-                        <div className="relative z-10 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl transform transition-transform duration-500 hover:scale-105">
+                        <div className="relative z-10 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl transform transition-transform duration-500 hover:scale-105 overflow-hidden">
+                            <div className="absolute left-0 w-full h-[2px] bg-blue-400 animate-scan z-20"></div>
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-sm font-mono text-white/50">LIVE_SCANNER_V2.0</h3>
                                 <div className="flex gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="w-2 h-2 rounded-full bg-yellow-500"></span><span className="w-2 h-2 rounded-full bg-green-500"></span></div>

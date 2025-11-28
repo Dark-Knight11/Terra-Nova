@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Globe, AlertTriangle, ShieldCheck, Layers, Zap, TrendingUp, Eye, FileCheck, Leaf, Lock, RefreshCw, Server } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Globe, AlertTriangle, ShieldCheck, Layers, Eye, FileCheck, Leaf, Lock, RefreshCw, Server } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 

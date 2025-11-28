@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Share2, Shield } from 'lucide-react';
-import { credits } from '../data/mockData';
+import { api } from '../api/client';
 
 interface ProjectDetailViewProps {
     selectedProject: any;
@@ -10,6 +10,23 @@ interface ProjectDetailViewProps {
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick }) => {
     const [detailTab, setDetailTab] = useState('overview'); // overview, audit, company
+    const [credits, setCredits] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchCredits = async () => {
+            try {
+                const data = await api.credits.getAll();
+                setCredits(data);
+            } catch (error) {
+                console.error('Failed to fetch credits:', error);
+                // Fallback to mock data
+                import('../data/mockData').then(({ credits: mockCredits }) => {
+                    setCredits(mockCredits);
+                });
+            }
+        };
+        fetchCredits();
+    }, []);
 
     if (!selectedProject) return <div className="pt-32 px-6">Loading...</div>;
 

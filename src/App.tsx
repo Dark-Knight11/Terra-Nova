@@ -9,6 +9,7 @@ import TechnologyView from './views/TechnologyView';
 import GovernanceView from './views/GovernanceView';
 import ProjectDetailView from './views/ProjectDetailView';
 import AboutView from './views/AboutView';
+import ProfileView from './views/ProfileView';
 
 const App = () => {
   // --- State ---
@@ -17,7 +18,7 @@ const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [authType, setAuthType] = useState('login');
+  const [authType, setAuthType] = useState<'login' | 'signup'>('login');
 
   // --- Refs ---
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -142,6 +143,7 @@ const App = () => {
           {activeTab === 'technology' && <TechnologyView />}
           {activeTab === 'governance' && <GovernanceView />}
           {activeTab === 'about' && <AboutView />}
+          {activeTab === 'profile' && <ProfileView />}
           {activeTab === 'detail' && selectedProject && <ProjectDetailView selectedProject={selectedProject} setActiveTab={setActiveTab} handleProjectClick={handleProjectClick} />}
         </main>
 

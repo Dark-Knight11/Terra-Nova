@@ -2,6 +2,9 @@ import { Router } from 'express';
 import authRoutes from './auth.routes';
 import companyRoutes from './company.routes';
 import contractRoutes from './contract.routes';
+import creditRoutes from './credit.routes';
+import walletRoutes from './wallet.routes';
+import proposalRoutes from './proposal.routes';
 
 const router = Router();
 
@@ -18,6 +21,9 @@ router.get('/health', (_req, res) => {
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
 router.use('/contracts', contractRoutes);
+router.use('/credits', creditRoutes);
+router.use('/wallets', walletRoutes);
+router.use('/proposals', proposalRoutes);
 
 // TODO: Add auditor and registry routes when implemented
 // router.use('/auditors', auditorRoutes);

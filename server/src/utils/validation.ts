@@ -40,7 +40,16 @@ export const roleSchema = Joi.string()
 export const registrationSchema = Joi.object({
     email: emailSchema,
     password: passwordSchema,
-    role: roleSchema
+    role: roleSchema,
+    companyName: Joi.when('role', {
+        is: 'COMPANY',
+        then: Joi.string().min(2).max(200).required().messages({
+            'any.required': 'Company Name is required for Company role',
+            'string.min': 'Company Name must be at least 2 characters',
+            'string.max': 'Company Name cannot exceed 200 characters'
+        }),
+        otherwise: Joi.string().optional()
+    })
 });
 
 // Login schema
@@ -57,7 +66,8 @@ export const walletParamSchema = Joi.object({
 // SIWE verification schema
 export const siweVerificationSchema = Joi.object({
     message: Joi.string().required(),
-    signature: Joi.string().required()
+    signature: Joi.string().required(),
+    walletAddress: walletAddressSchema.required()
 });
 
 // Company creation schema
@@ -99,6 +109,7 @@ export const validateRequest = (schema: Joi.ObjectSchema, data: any) => {
     const { error, value } = schema.validate(data, { abortEarly: false });
 
     if (error) {
+        console.log('Validation Error Details:', JSON.stringify(error.details, null, 2));
         const errors = error.details.map(detail => ({
             field: detail.path.join('.'),
             message: detail.message
@@ -109,13 +120,4 @@ export const validateRequest = (schema: Joi.ObjectSchema, data: any) => {
     return value;
 };
 
-// Custom validation error class
-export class ValidationError extends Error {
-    public errors: Array<{ field: string; message: string }>;
-
-    constructor(message: string, errors: Array<{ field: string; message: string }>) {
-        super(message);
-        this.name = 'ValidationError';
-        this.errors = errors;
-    }
-}
+import { ValidationError } from '../middleware/errorHandler';

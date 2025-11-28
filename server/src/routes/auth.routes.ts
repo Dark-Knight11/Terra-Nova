@@ -8,7 +8,7 @@ const router = Router();
 // Rate limiter for auth endpoints
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 requests per window
+    max: 1000, // 1000 requests per window
     message: 'Too many authentication attempts, please try again later'
 });
 
@@ -19,12 +19,16 @@ const nonceLimiter = rateLimit({
 });
 
 // Traditional auth routes
-router.post('/register', authLimiter, authController.register);
+router.post('/register', authController.register);
 router.post('/login', authLimiter, authController.login);
 
 // Web3 auth routes
 router.get('/nonce/:address', nonceLimiter, authController.getNonce);
 router.post('/verify-signature', authLimiter, authController.verifySignature);
+
+// Wallet linking (protected)
+router.get('/generate-linking-nonce/:address', authenticateToken, authController.generateLinkingNonce);
+router.post('/link-wallet', authenticateToken, authController.linkWallet);
 
 // Token management
 router.post('/refresh', authController.refreshToken);

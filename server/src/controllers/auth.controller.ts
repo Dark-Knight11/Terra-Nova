@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { SiweMessage } from 'siwe';
@@ -21,13 +20,12 @@ import {
 } from '../middleware/errorHandler';
 import web3Service from '../services/web3.service';
 import { Logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db/client';
 
 // Traditional Email/Password Registration
 export const register = asyncHandler(async (req: Request, res: Response) => {
     // Validate request body
-    const { email, password, role } = validateRequest(registrationSchema, req.body);
+    const { email, password, role, companyName } = validateRequest(registrationSchema, req.body);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -41,19 +39,58 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user
-    const user = await prisma.user.create({
-        data: {
-            email,
-            passwordHash,
-            role,
-            isVerified: false
+    // Use transaction to create user and related entity
+    const result = await prisma.$transaction(async (tx) => {
+        // Create user
+        const user = await tx.user.create({
+            data: {
+                email,
+                passwordHash,
+                role,
+                isVerified: false
+            },
+            include: {
+                company: true,
+                auditor: true,
+                registry: true
+            }
+        });
+
+        // Create related entity based on role
+        if (role === 'COMPANY' && companyName) {
+            await tx.company.create({
+                data: {
+                    userId: user.id,
+                    name: companyName,
+                    verificationStatus: 'PENDING'
+                }
+            });
+        } else if (role === 'AUDITOR') {
+            // Create placeholder auditor profile
+            await tx.auditor.create({
+                data: {
+                    userId: user.id,
+                    name: email.split('@')[0], // Default name from email
+                    verificationStatus: 'PENDING'
+                }
+            });
+        } else if (role === 'REGISTRY') {
+            // Create placeholder registry profile
+            await tx.registry.create({
+                data: {
+                    userId: user.id,
+                    name: email.split('@')[0], // Default name from email
+                    verificationStatus: 'PENDING'
+                }
+            });
         }
+
+        return user;
     });
 
     // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(result.id, result.role);
+    const refreshToken = generateRefreshToken(result.id);
 
     // Store refresh token
     const expiresAt = new Date();
@@ -61,7 +98,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
     await prisma.session.create({
         data: {
-            userId: user.id,
+            userId: result.id,
             refreshToken,
             expiresAt,
             userAgent: req.headers['user-agent'],
@@ -69,17 +106,20 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         }
     });
 
-    Logger.info('User registered successfully', { userId: user.id, email: user.email });
+    Logger.info('User registered successfully', { userId: result.id, email: result.email });
 
     res.status(201).json({
         success: true,
         message: 'User registered successfully',
         data: {
             user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                isVerified: user.isVerified
+                id: result.id,
+                email: result.email,
+                role: result.role,
+                isVerified: result.isVerified,
+                company: (result as any).company,
+                auditor: (result as any).auditor,
+                registry: (result as any).registry
             },
             accessToken,
             refreshToken
@@ -94,7 +134,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
     // Find user
     const user = await prisma.user.findUnique({
-        where: { email }
+        where: { email },
+        include: {
+            company: true,
+            auditor: true,
+            registry: true
+        }
     });
 
     if (!user || !user.passwordHash) {
@@ -136,7 +181,10 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                isVerified: user.isVerified
+                isVerified: user.isVerified,
+                company: user.company,
+                auditor: user.auditor,
+                registry: user.registry
             },
             accessToken,
             refreshToken
@@ -165,15 +213,38 @@ export const getNonce = asyncHandler(async (req: Request, res: Response) => {
     });
 
     if (!user) {
-        // Create new user with wallet address
-        user = await prisma.user.create({
-            data: {
-                walletAddress: normalizedAddress,
-                role: 'COMPANY', // Default role, can be changed later
-                nonce,
-                nonceExpiry
-            }
-        });
+        // Check if we are linking to an authenticated user (via auth middleware)
+        // Note: This endpoint is usually public, but if we want to support linking, we might need a separate flow or check auth header
+
+        // For now, standard flow: Create new user if not exists (only for wallet-first auth, which we are deprecating for signup but keeping for login)
+        // But per requirements, we want strict input-based signup. 
+        // So if user doesn't exist, we shouldn't create one here blindly if we want to enforce email signup first.
+        // However, for "Login with Wallet", we need to support existing users.
+
+        // If user doesn't exist, we return 404 or handle it. 
+        // But wait, the requirement is "keep login strictly input based and give option to later connect metamask".
+        // So "Login with Wallet" might only be for users who HAVE linked their wallet.
+
+        // If we want to allow "Login with Wallet" for users who have already linked, we return 404 if not found.
+        // If we want to allow "Sign up with Wallet" (which we are removing), we would create.
+
+        // Let's assume we ONLY allow getting nonce for existing users with that wallet.
+        // OR for a new wallet that is being linked to an authenticated user.
+
+        // Since this is a public endpoint, we can't easily know the authenticated user without middleware.
+        // Let's keep it as is for now but maybe restrict creation?
+        // Actually, for "Link Wallet", we will use a separate protected endpoint.
+        // This `getNonce` is for the public "Login with Wallet" flow.
+
+        // If user not found by wallet, we can create a temporary record OR just return error.
+        // Given the new requirement, let's NOT create a new user here.
+        // But we need to support the case where a user IS trying to login with a wallet they already linked.
+
+        // So:
+        // 1. If user exists with this wallet -> Return nonce.
+        // 2. If user does NOT exist -> Return error "Wallet not registered. Please sign up with email first."
+
+        throw new NotFoundError('Wallet not registered. Please sign up with email first, then link your wallet in settings.');
     } else {
         // Update nonce for existing user
         user = await prisma.user.update({
@@ -282,6 +353,158 @@ export const verifySignature = asyncHandler(async (req: Request, res: Response) 
             },
             accessToken,
             refreshToken
+        }
+    });
+});
+
+// Link Wallet to Existing Account
+export const linkWallet = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    const { message, signature } = validateRequest(siweVerificationSchema, req.body);
+
+    if (!userId) {
+        throw new AuthenticationError('Not authenticated');
+    }
+
+    // Parse SIWE message
+    const siweMessage = new SiweMessage(message);
+
+    // Verify signature
+    try {
+        await siweMessage.verify({ signature });
+    } catch (error) {
+        Logger.error('SIWE verification failed', { error });
+        throw new AuthenticationError('Invalid signature');
+    }
+
+    const normalizedAddress = web3Service.normalizeAddress(siweMessage.address);
+
+    // Check if wallet is already linked to another user
+    const existingWalletUser = await prisma.user.findUnique({
+        where: { walletAddress: normalizedAddress }
+    });
+
+    if (existingWalletUser && existingWalletUser.id !== userId) {
+        throw new ConflictError('Wallet already linked to another account');
+    }
+
+    // Get current user to check nonce
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+
+    if (!user) {
+        throw new NotFoundError('User not found');
+    }
+
+    // Verify nonce (User should have requested a nonce before calling this)
+    // Note: For linking, we need a way to generate a nonce for the AUTHENTICATED user.
+    // We can reuse getNonce if we allow it to update the user's nonce even if wallet doesn't match yet?
+    // Or we need a specific "getNonceForLinking" endpoint?
+    // Simpler: The frontend requests a nonce for the WALLET address. 
+    // But wait, getNonce currently looks up by WALLET address.
+    // If the wallet is not linked, getNonce throws NotFoundError (as per my change above).
+
+    // So we need to fix getNonce to allow generating a nonce for a wallet that ISN'T linked yet, 
+    // IF the intention is to link it. But getNonce is public.
+
+    // Solution: Add a specific `getLinkingNonce` endpoint or modify `getNonce` to handle this case.
+    // Or, simpler: `linkWallet` endpoint handles the nonce verification differently? 
+    // No, SIWE requires a nonce from the backend.
+
+    // Let's modify `getNonce` to allow creating a temporary nonce record? No, that's complex.
+    // Best approach: 
+    // 1. Authenticated user calls `generate-nonce` (new endpoint) which sets a nonce on their USER record.
+    // 2. User signs message with that nonce.
+    // 3. User calls `linkWallet` with signature.
+
+    // But SIWE message includes the address. The signature verifies that the address signed the message containing the nonce.
+    // So the nonce must be associated with the user who is initiating the link.
+
+    if (user.nonce !== siweMessage.nonce) {
+        throw new AuthenticationError('Invalid nonce');
+    }
+
+    // Update user with new wallet address
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            walletAddress: normalizedAddress,
+            nonce: null,
+            nonceExpiry: null
+        }
+    });
+
+    // Also update the entity record (Company/Auditor/Registry)
+    if (user.role === 'COMPANY') {
+        await prisma.company.update({
+            where: { userId },
+            data: { walletAddress: normalizedAddress }
+        });
+    } else if (user.role === 'AUDITOR') {
+        await prisma.auditor.update({
+            where: { userId },
+            data: { walletAddress: normalizedAddress }
+        });
+    } else if (user.role === 'REGISTRY') {
+        await prisma.registry.update({
+            where: { userId },
+            data: { walletAddress: normalizedAddress }
+        });
+    }
+
+    Logger.info('Wallet linked successfully', { userId, walletAddress: normalizedAddress });
+
+    res.json({
+        success: true,
+        message: 'Wallet linked successfully',
+        data: {
+            walletAddress: normalizedAddress
+        }
+    });
+});
+
+// Generate Nonce for Linking (Authenticated)
+export const generateLinkingNonce = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    const { address } = req.params;
+
+    if (!userId) {
+        throw new AuthenticationError('Not authenticated');
+    }
+
+    const normalizedAddress = web3Service.normalizeAddress(address);
+
+    // Generate nonce
+    const nonce = crypto.randomBytes(32).toString('hex');
+    const nonceExpiry = new Date(Date.now() + parseInt(process.env.NONCE_EXPIRATION_MS || '600000'));
+
+    // Update user with nonce
+    await prisma.user.update({
+        where: { id: userId },
+        data: { nonce, nonceExpiry }
+    });
+
+    // Create SIWE message
+    const domain = process.env.SIWE_DOMAIN || 'localhost:3001';
+    const uri = process.env.SIWE_URI || 'http://localhost:3001';
+    const chainId = parseInt(process.env.ETHEREUM_CHAIN_ID || '1');
+
+    const message = new SiweMessage({
+        domain,
+        address: normalizedAddress,
+        statement: 'Link wallet to DCCP Account',
+        uri,
+        version: '1',
+        chainId,
+        nonce
+    });
+
+    res.json({
+        success: true,
+        data: {
+            nonce,
+            message: message.prepareMessage()
         }
     });
 });
