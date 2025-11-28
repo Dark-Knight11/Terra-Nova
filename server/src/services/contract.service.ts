@@ -11,17 +11,19 @@ const CARBON_CREDIT_ABI = [
     // ERC1155 functions
     'function balanceOf(address account, uint256 id) view returns (uint256)',
     'function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data) external',
-    
+
     // Legacy support / Convenience
     'function balanceOf(address owner) view returns (uint256)',
     'function getProjectDetails(uint256 projectId) view returns (string memory name, string memory location, uint256 credits)',
-    
+
     // Carbon credit specific
     'function mintCredits(uint256 projectId, uint256 amount, string memory monitoringReportHash) external',
 
     // Events
     'event Transfer(address indexed from, address indexed to, uint256 value)',
-    'event CreditMinted(address indexed to, uint256 amount, uint256 projectId)'
+    'event CreditMinted(address indexed to, uint256 amount, uint256 projectId)',
+    'event ProjectCreated(uint256 indexed projectId, string name, uint8 category, uint8 gasType)',
+    'event ProjectApproved(uint256 indexed projectId)'
 ];
 
 const MARKETPLACE_ABI = [
@@ -146,17 +148,107 @@ class ContractService {
         }
     }
 
+    // Listen for project events
+    async listenForProjectEvents() {
+        try {
+            const contract = this.getContract();
+
+            // Project Created
+            contract.on('ProjectCreated', async (projectId, name, _category, _gasType, _event) => {
+                Logger.info('ProjectCreated event detected', { projectId, name });
+                // We might want to link this to an existing CarbonCredit if it was created via API
+                // For now, we just log it, or we could try to find a pending credit with same name?
+                // Ideally, the API creation returns the ID which is then used on-chain.
+                // But here we are syncing back.
+
+                // Strategy: If we have a CarbonCredit with this name and no projectId, update it.
+                try {
+                    // @ts-ignore
+                    const credit = await prisma.carbonCredit.findFirst({
+                        where: {
+                            title: name,
+                            projectId: null
+                        }
+                    });
+
+                    if (credit) {
+                        // @ts-ignore
+                        await prisma.carbonCredit.update({
+                            where: { id: credit.id },
+                            data: {
+                                projectId: projectId.toString(),
+                                status: 'SUBMITTED'
+                            }
+                        });
+                        Logger.info('Linked on-chain project to CarbonCredit', { creditId: credit.id, projectId });
+                    }
+                } catch (err) {
+                    Logger.error('Error indexing ProjectCreated', err);
+                }
+            });
+
+            // Project Approved
+            contract.on('ProjectApproved', async (projectId, _event) => {
+                Logger.info('ProjectApproved event detected', { projectId });
+                try {
+                    // @ts-ignore
+                    await prisma.carbonCredit.update({
+                        where: { projectId: projectId.toString() },
+                        data: { status: 'APPROVED' }
+                    });
+                    Logger.info('Updated CarbonCredit status to APPROVED', { projectId });
+                } catch (err) {
+                    Logger.error('Error indexing ProjectApproved', err);
+                }
+            });
+
+            Logger.info('Listening for Project events');
+        } catch (error) {
+            Logger.error('Failed to setup project listener', { error });
+        }
+    }
+
     // Listen for credit minted events
     async listenForCreditMints(callback: (to: string, amount: bigint, projectId: bigint) => void) {
         try {
             const contract = this.getContract();
 
-            contract.on('CreditMinted', (to, amount, projectId, _event) => {
+            contract.on('CreditMinted', async (to, amount, projectId, _event) => {
                 Logger.info('CreditMinted event detected', {
                     to,
                     amount: amount.toString(),
                     projectId: projectId.toString()
                 });
+
+                // Update volume/credits in DB
+                try {
+                    // @ts-ignore
+                    const credit = await prisma.carbonCredit.findUnique({
+                        where: { projectId: projectId.toString() }
+                    });
+
+                    if (credit) {
+                        // Parse current volume, add new amount
+                        // Assuming volume is stored as string representation of number
+                        // But schema says 'volume' string. Let's assume it's just a display string for now
+                        // or we might want to add a 'creditsIssued' field.
+                        // For now, let's just log it.
+
+                        // Actually, Company model has 'credits' field.
+                        // @ts-ignore
+                        await prisma.company.update({
+                            where: { id: credit.companyId },
+                            data: {
+                                credits: {
+                                    increment: Number(ethers.formatUnits(amount, 18)) // Assuming 18 decimals
+                                }
+                            }
+                        });
+                    }
+                } catch (err) {
+                    Logger.error('Error updating credits on mint', err);
+                }
+
                 callback(to, amount, projectId);
             });
 

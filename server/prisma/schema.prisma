@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")       // Pooled connection for queries
-  directUrl = env("DIRECT_DATABASE_URL") // Direct connection for migrations
+  directUrl = env("DATABASE_URL") // Direct connection for migrations
 }
 
 enum UserRole {
@@ -163,6 +163,10 @@ model CarbonCredit {
   volume         String
   methodology    String
   walletAddress  String?
+  
+  // Blockchain Sync
+  projectId      String?    @unique // On-chain Project ID
+  status         String     @default("PENDING") // PENDING, APPROVED, REJECTED
   
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

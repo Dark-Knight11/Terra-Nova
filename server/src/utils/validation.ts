@@ -48,7 +48,7 @@ export const registrationSchema = Joi.object({
             'string.min': 'Company Name must be at least 2 characters',
             'string.max': 'Company Name cannot exceed 200 characters'
         }),
-        otherwise: Joi.string().optional()
+        otherwise: Joi.string().allow('', null).optional()
     })
 });
 

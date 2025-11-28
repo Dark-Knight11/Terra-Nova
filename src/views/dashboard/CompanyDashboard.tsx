@@ -20,6 +20,7 @@ const CompanyDashboard: React.FC = () => {
     const [showListingModal, setShowListingModal] = useState(false);
     const [mintingProjectId, setMintingProjectId] = useState<string | null>(null);
 
+
     // Form state for new project
     const [newProject, setNewProject] = useState<{
         projectName: string;
@@ -147,6 +148,8 @@ const CompanyDashboard: React.FC = () => {
             setMintingProjectId(null);
         }
     };
+
+
 
     const handleViewProject = (project: ProjectInfo) => {
         setSelectedProject(project);
@@ -328,9 +331,9 @@ const CompanyDashboard: React.FC = () => {
                                                 {/* Mint Button (Demo) */}
                                                 <button
                                                     onClick={() => handleMintCredits(project.projectId)}
-                                                    disabled={mintingProjectId === project.projectId}
-                                                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors disabled:opacity-50"
-                                                    title="Mint 1000 Credits (Demo)"
+                                                    disabled={mintingProjectId === project.projectId || project.status !== 2} // Disable if not approved
+                                                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title={project.status !== 2 ? "Project must be approved to mint" : "Mint 1000 Credits (Demo)"}
                                                 >
                                                     {mintingProjectId === project.projectId ? (
                                                         <Loader2 size={16} className="animate-spin" />
@@ -338,6 +341,8 @@ const CompanyDashboard: React.FC = () => {
                                                         <Coins size={16} />
                                                     )}
                                                 </button>
+
+
 
                                                 {/* List Button */}
                                                 <button

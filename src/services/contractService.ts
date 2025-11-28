@@ -363,6 +363,13 @@ export class ContractService {
         return receipt.hash;
     }
 
+    async approveProject(projectId: string): Promise<string> {
+        await this.ensureConnected();
+        const tx = await this.tokenContract!.approveProject(projectId);
+        const receipt = await tx.wait();
+        return receipt.hash;
+    }
+
     async getProjectInfo(projectId: string): Promise<ProjectInfo | null> {
         await this.ensureConnected();
 
@@ -402,11 +409,32 @@ export class ContractService {
             };
         } catch (error) {
             console.error(`Error fetching project info for ${projectId}:`, error);
-            // Log the contract address we are trying to call
-            console.error('Contract address:', this.tokenContract?.target);
             return null;
         }
     }
+
+    async getAllProjects(): Promise<ProjectInfo[]> {
+        await this.ensureConnected();
+        try {
+            const totalProjects = await this.getTotalProjects();
+            const projects: ProjectInfo[] = [];
+
+            // Iterate from 1 to totalProjects (assuming 1-based indexing as per Solidity convention usually, 
+            // but need to check if it's 0 or 1 based. Usually counters start at 1 or 0. 
+            // Let's assume 1 based based on previous logs showing ID 1).
+            for (let i = 1; i <= totalProjects; i++) {
+                const project = await this.getProjectInfo(i.toString());
+                if (project) {
+                    projects.push(project);
+                }
+            }
+            return projects;
+        } catch (error) {
+            console.error('Error fetching all projects:', error);
+            return [];
+        }
+    }
+
 
     async getDeveloperProjects(): Promise<string[]> {
         await this.ensureConnected();

@@ -152,7 +152,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ showAuth, setShowAuth, authType, 
                                         onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                         placeholder="Acme Corp"
-                                        required
+                                        required={formData.role === 'COMPANY'}
                                         disabled={isLoading || showWalletConnect}
                                         minLength={2}
                                     />

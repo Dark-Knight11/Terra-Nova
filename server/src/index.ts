@@ -59,6 +59,10 @@ app.listen(PORT, () => {
     // Initialize Contract Service Listeners
     import('./services/contract.service').then(({ default: contractService }) => {
         contractService.listenForMarketEvents();
+        contractService.listenForProjectEvents();
+        contractService.listenForCreditMints((to, amount, projectId) => {
+            Logger.info('Credit Minted', { to, amount: amount.toString(), projectId: projectId.toString() });
+        });
         Logger.info('Contract Service listeners started');
     }).catch(err => {
         Logger.error('Failed to start Contract Service listeners', err);
