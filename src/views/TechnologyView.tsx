@@ -1,97 +1,159 @@
-import React from 'react';
-import { Cpu, Layers, Lock, Database, ArrowRight, User, Globe, ShieldCheck, Zap } from 'lucide-react';
+import { Cpu, Layers, Lock, Database, Server, User, Globe, FileCode, Activity, Zap, Clock, Save, Command } from 'lucide-react';
 
 const DataFlowDiagram = () => {
     return (
         <div className="mt-20 p-8 border border-white/5 rounded-2xl bg-[#0a0a0a]/50 relative overflow-hidden overflow-x-auto">
             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:20px_20px]"></div>
-            <div className="relative z-10 min-w-[800px] h-[400px] flex items-center justify-center select-none">
+            <div className="relative z-10 min-w-[1100px] h-[650px] flex items-center justify-center select-none">
                 <svg className="absolute inset-0 w-full h-full pointer-events-none">
                     <defs>
-                        <linearGradient id="grad-line" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#10B981" stopOpacity="0" />
-                            <stop offset="50%" stopColor="#10B981" stopOpacity="0.5" />
-                            <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
-                        </linearGradient>
                         <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                            <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#4B5563" />
                         </marker>
                     </defs>
 
-                    {/* Paths */}
                     {/* User -> Frontend */}
-                    <path d="M 120 200 L 280 200" stroke="#374151" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
-                    <circle r="3" fill="#10B981">
-                        <animateMotion dur="2s" repeatCount="indefinite" path="M 120 200 L 280 200" />
-                    </circle>
+                    <path d="M 100 100 L 200 100" stroke="#4B5563" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
+                    <circle r="3" fill="#10B981"><animateMotion dur="2s" repeatCount="indefinite" path="M 100 100 L 200 100" /></circle>
 
-                    {/* Frontend -> Contract */}
-                    <path d="M 320 200 L 480 200" stroke="#374151" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
-                    <circle r="3" fill="#3B82F6">
-                        <animateMotion dur="2s" repeatCount="indefinite" begin="0.5s" path="M 320 200 L 480 200" />
-                    </circle>
+                    {/* Frontend <-> Backend */}
+                    <path d="M 250 100 L 380 100" stroke="#4B5563" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" />
+                    <circle r="3" fill="#3B82F6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.5s" path="M 250 100 L 380 100" /></circle>
 
-                    {/* Contract -> AI Agent */}
-                    <path d="M 520 200 C 550 200, 550 100, 680 100" stroke="#374151" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" fill="none" />
-                    <circle r="3" fill="#F59E0B">
-                        <animateMotion dur="2s" repeatCount="indefinite" begin="1s" path="M 520 200 C 550 200, 550 100, 680 100" />
-                    </circle>
+                    {/* Backend -> Smart Contracts */}
+                    <path d="M 500 100 L 650 60" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <path d="M 500 100 L 650 100" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <path d="M 500 100 L 650 140" stroke="#4B5563" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
 
-                    {/* Contract -> Database */}
-                    <path d="M 520 200 C 550 200, 550 300, 680 300" stroke="#374151" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" fill="none" />
-                    <circle r="3" fill="#8B5CF6">
-                        <animateMotion dur="2s" repeatCount="indefinite" begin="1s" path="M 520 200 C 550 200, 550 300, 680 300" />
-                    </circle>
+                    {/* Backend -> Agentic Layer (Orchestrator) */}
+                    <path d="M 440 150 L 462 349" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 440 150 L 462 349" /></circle>
 
-                    {/* AI Agent -> Contract (Feedback) */}
-                    <path d="M 680 130 C 600 130, 600 180, 520 190" stroke="#374151" strokeWidth="2" markerEnd="url(#arrowhead)" strokeDasharray="5,5" fill="none" opacity="0.5" />
-                    <circle r="2" fill="#EF4444">
-                        <animateMotion dur="3s" repeatCount="indefinite" begin="2s" path="M 680 130 C 600 130, 600 180, 520 190" />
-                    </circle>
+                    {/* Orchestrator -> Wallet Analyser */}
+                    <path d="M 460 370 L 236 473" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 460 370 L 236 473" /></circle>
+
+                    {/* Orchestrator -> Scoring Engine */}
+                    <path d="M 465 380 L 410 553" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 465 380 L 410 553" /></circle>
+
+                    {/* Orchestrator -> Scheduler */}
+                    <path d="M 480 380 L 558 553" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 480 380 L 558 553" /></circle>
+
+                    {/* Orchestrator -> Persister */}
+                    <path d="M 484 370 L 698 463" stroke="#F59E0B" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+                    <circle r="2" fill="#F59E0B"><animateMotion dur="3s" repeatCount="indefinite" path="M 484 370 L 698 463" /></circle>
+
+                    {/* Wallets -> Analyser */}
+                    <path d="M 90 495 L 222 471" stroke="#3B82F6" strokeWidth="1" markerEnd="url(#arrowhead)" opacity="0.5" />
+
+                    {/* Persister -> Smart Contracts */}
+                    <path d="M 710 457 C 790 400, 810 250, 750 140" stroke="#EF4444" strokeWidth="1" markerEnd="url(#arrowhead)" strokeDasharray="3,3" opacity="1.0" fill="none" />
+                    <circle r="2" fill="#EF4444"><animateMotion dur="4s" repeatCount="indefinite" begin="2s" path="M 710 457 C 790 400, 810 250, 750 140" /></circle>
 
                 </svg>
 
-                {/* Nodes */}
                 {/* User */}
-                <div className="absolute left-[50px] top-[170px] flex flex-col items-center gap-2">
-                    <div className="w-16 h-16 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-                        <User className="text-emerald-400" />
+                <div className="absolute left-[50px] top-[70px] flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                        <User className="text-emerald-400" size={20} />
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-white/50">User</span>
+                    <span className="text-[10px] uppercase tracking-widest text-white/50">User</span>
                 </div>
 
                 {/* Frontend */}
-                <div className="absolute left-[250px] top-[170px] flex flex-col items-center gap-2">
-                    <div className="w-16 h-16 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.1)]">
-                        <Globe className="text-blue-400" />
+                <div className="absolute left-[200px] top-[70px] flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-lg bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                        <Globe className="text-blue-400" size={20} />
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-white/50">Frontend</span>
+                    <span className="text-[10px] uppercase tracking-widest text-white/50">Frontend</span>
                 </div>
 
-                {/* Smart Contract */}
-                <div className="absolute left-[450px] top-[170px] flex flex-col items-center gap-2">
-                    <div className="w-16 h-16 rounded-xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(249,115,22,0.1)] relative">
-                        <div className="absolute inset-0 border border-orange-500/20 rounded-xl animate-ping opacity-20"></div>
-                        <ShieldCheck className="text-orange-400" />
+                {/* Backend */}
+                <div className="absolute left-[380px] top-[55px] flex flex-col items-center gap-2">
+                    <div className="w-28 h-20 rounded-lg bg-[#0a0a0a] border border-white/10 flex flex-col items-center justify-center px-2">
+                        <Server className="text-purple-400" size={24} />
+                        <span className="text-[8px] text-white/40 mt-1">Auth • Calls</span>
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-white/50">Smart Contract</span>
+                    <span className="text-[10px] uppercase tracking-widest text-white/50">Backend</span>
                 </div>
 
-                {/* AI Agent */}
-                <div className="absolute left-[650px] top-[70px] flex flex-col items-center gap-2">
-                    <div className="w-16 h-16 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-                        <Zap className="text-red-400" />
+                {/* Smart Contracts Cluster */}
+                <div className="absolute left-[650px] top-[20px] p-4 border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm w-[200px]">
+                    <div className="text-[10px] uppercase tracking-widest text-white/30 mb-3 text-center">Smart Contracts</div>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 px-2 py-1 bg-black/30 rounded border border-orange-500/20">
+                            <FileCode size={12} className="text-orange-400" />
+                            <span className="text-[8px] text-white/60">Minting</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-2 py-1 bg-black/30 rounded border border-orange-500/20">
+                            <FileCode size={12} className="text-orange-400" />
+                            <span className="text-[8px] text-white/60">Selling</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-2 py-1 bg-black/30 rounded border border-orange-500/20">
+                            <FileCode size={12} className="text-orange-400" />
+                            <span className="text-[8px] text-white/60">Burning/Certificate</span>
+                        </div>
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-white/50">AI Verifier</span>
                 </div>
 
-                {/* Database */}
-                <div className="absolute left-[650px] top-[270px] flex flex-col items-center gap-2">
-                    <div className="w-16 h-16 rounded-lg bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.1)]">
-                        <Database className="text-purple-400" />
+                {/* Agentic Layer Box */}
+                <div className="absolute top-[265px] left-[20px] right-[20px] bottom-[20px] border border-emerald-500/10 rounded-3xl bg-emerald-500/[0.02]">
+                    <div className="absolute top-3 left-5 text-[10px] uppercase tracking-widest text-emerald-400/60">5-Agent System</div>
+
+                    {/* Orchestrator (Center) */}
+                    <div className="absolute left-[400px] top-[82px] flex flex-col items-center gap-2 z-10">
+                        <div className="w-16 h-16 rounded-full bg-[#0a0a0a] border border-emerald-500/50 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.2)] relative">
+                            <div className="absolute inset-0 rounded-full border border-emerald-500/20 animate-ping opacity-20"></div>
+                            <Command className="text-emerald-400" size={26} />
+                        </div>
+                        <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-bold">Orchestrator</span>
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-white/50">Off-Chain Data</span>
+
+                    {/* Wallet Analyser */}
+                    <div className="absolute left-[180px] top-[180px] flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                            <Activity className="text-blue-400" size={18} />
+                        </div>
+                        <span className="text-[8px] uppercase tracking-widest text-white/50">Wallet Analyser</span>
+                    </div>
+
+                    {/* Wallets (External) */}
+                    <div className="absolute left-[30px] top-[210px] flex flex-col items-center gap-1">
+                        <div className="w-10 h-10 rounded-lg bg-[#0a0a0a] border border-blue-500/20 flex items-center justify-center">
+                            <Database className="text-blue-300" size={16} />
+                        </div>
+                        <span className="text-[7px] text-white/40">Wallets</span>
+                    </div>
+
+                    {/* Scoring Engine */}
+                    <div className="absolute left-[350px] top-[270px] flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                            <Zap className="text-yellow-400" size={18} />
+                        </div>
+                        <span className="text-[8px] uppercase tracking-widest text-white/50">Scoring Engine</span>
+                    </div>
+
+                    {/* Scheduler */}
+                    <div className="absolute left-[510px] top-[270px] flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                            <Clock className="text-purple-400" size={18} />
+                        </div>
+                        <span className="text-[8px] uppercase tracking-widest text-white/50">Scheduler</span>
+                        <span className="text-[7px] text-white/30">(Daily)</span>
+                    </div>
+
+                    {/* Persister */}
+                    <div className="absolute left-[660px] top-[180px] flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                            <Save className="text-red-400" size={18} />
+                        </div>
+                        <span className="text-[8px] uppercase tracking-widest text-white/50">Persister</span>
+                        <span className="text-[7px] text-white/30">(Monthly)</span>
+                    </div>
                 </div>
+
             </div>
         </div>
     );
@@ -119,10 +181,10 @@ const TechnologyView = () => (
                     </div>
                     <h3 className="font-serif text-2xl mb-4">Frontend Layer</h3>
                     <p className="text-sm text-white/50 leading-relaxed mb-4">
-                        Handles visualization, marketplace interaction, and wallet connection. Built for high-performance rendering.
+                        Handles all data visualization, registration/login forms, and wallet scoring filters. Enables querying, bidding, and listing of carbon credits.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {['Next.js', 'React', 'Three.js', 'GSAP'].map(tag => (
+                        {['Visualization', 'Forms', 'Bidding', 'Listing', 'Filtering'].map(tag => (
                             <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-1 bg-white/5 rounded border border-white/5">{tag}</span>
                         ))}
                     </div>
@@ -135,10 +197,10 @@ const TechnologyView = () => (
                     </div>
                     <h3 className="font-serif text-2xl mb-4">Smart Contracts</h3>
                     <p className="text-sm text-white/50 leading-relaxed mb-4">
-                        Immutable logic for minting, selling, burning, and certificate generation. Ensures zero double-counting.
+                        Three core contracts for Minting, Selling, and Burning/Certificate Generation. Ensures immutable and transparent carbon credit operations.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {['Solidity', 'ERC-721', 'Escrow', 'Polygon'].map(tag => (
+                        {['Minting', 'Selling', 'Burning', 'Certificates'].map(tag => (
                             <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-1 bg-white/5 rounded border border-white/5">{tag}</span>
                         ))}
                     </div>
@@ -149,12 +211,12 @@ const TechnologyView = () => (
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-900/20 border border-purple-500/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                         <Database className="text-purple-400" />
                     </div>
-                    <h3 className="font-serif text-2xl mb-4">Backend & Data</h3>
-                    <p className="text-sm text-white/50 leading-relaxed mb-4">
-                        Manages off-chain data, authentication, caching, and registry synchronization.
+                    <h3 className="font-serif text-2xl mb-4">Backend Layer</h3>
+                    <p className="text-sm text-white/50 text-sm leading-relaxed mb-4">
+                        Manages authentication/registration of companies, auditors, and registries. Handles linked address data and orchestrates smart contract calls.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {['Node.js', 'PostgreSQL', 'GraphQL', 'Auth0'].map(tag => (
+                        {['Auth', 'Registration', 'Data Mgmt', 'Contract Calls'].map(tag => (
                             <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-1 bg-white/5 rounded border border-white/5">{tag}</span>
                         ))}
                     </div>
@@ -165,12 +227,12 @@ const TechnologyView = () => (
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-900/20 border border-orange-500/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                         <Cpu className="text-orange-400" />
                     </div>
-                    <h3 className="font-serif text-2xl mb-4">Agentic AI</h3>
+                    <h3 className="font-serif text-2xl mb-4">Agentic Layer</h3>
                     <p className="text-sm text-white/50 leading-relaxed mb-4">
-                        Autonomous agents that score wallets, audit project data, and detect anomalies in real-time.
+                        5-Agent System: Analyzes company wallets, scores based on audit attempts and failures, runs daily scoring engine, and persists scores on-chain monthly.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {['Python', 'TensorFlow', 'NLP', 'Vector DB'].map(tag => (
+                        {['Orchestrator', 'Analyser', 'Scorer', 'Scheduler', 'Persister'].map(tag => (
                             <span key={tag} className="text-[10px] uppercase tracking-wider px-2 py-1 bg-white/5 rounded border border-white/5">{tag}</span>
                         ))}
                     </div>
