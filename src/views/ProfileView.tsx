@@ -1,38 +1,13 @@
-import { useState } from 'react';
-import { User, Clock, Wallet } from 'lucide-react';
+import { User, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../api/client';
+import { WalletConnection } from '../components/WalletConnection';
 
 const ProfileView = () => {
-    const { user, linkWallet } = useAuth();
-    const [isLinking, setIsLinking] = useState(false);
-    const [linkError, setLinkError] = useState<string | null>(null);
+    const { user } = useAuth();
 
     const maskAddress = (address: string) => {
         if (!address || address.length < 10) return address;
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
-    };
-
-    const handleConnectWallet = async () => {
-        setLinkError(null);
-        setIsLinking(true);
-        try {
-            if (!(window as any).ethereum) {
-                throw new Error('MetaMask not detected. Please install MetaMask extension.');
-            }
-            const accounts: string[] = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-            const address = accounts[0];
-            const { message: siweMessage } = await api.auth.getNonce(address);
-            const signature = await (window as any).ethereum.request({
-                method: 'personal_sign',
-                params: [siweMessage, address]
-            });
-            await linkWallet(address, signature, siweMessage);
-        } catch (err: any) {
-            setLinkError(err.message || 'Failed to connect wallet.');
-        } finally {
-            setIsLinking(false);
-        }
     };
 
     if (!user) return <div className="pt-32 px-6 text-center">Please login to view profile.</div>;
@@ -73,23 +48,17 @@ const ProfileView = () => {
                             )}
                         </div>
                         {/* Wallet Section */}
-                        {user.walletAddress ? (
-                            <p className="text-sm text-white/80">
-                                Wallet: <span className="font-mono text-emerald-400">{maskAddress(user.walletAddress)}</span>
-                            </p>
-                        ) : (
-                            <div className="mt-4">
-                                {linkError && <p className="text-red-400 text-xs mb-2">{linkError}</p>}
-                                <button
-                                    onClick={handleConnectWallet}
-                                    disabled={isLinking}
-                                    className="w-full bg-white/5 text-white border border-white/10 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Wallet size={18} />
-                                    {isLinking ? 'Connecting...' : 'Connect MetaMask'}
-                                </button>
-                            </div>
-                        )}
+                        <div className="mt-4">
+                            {user.walletAddress ? (
+                                <p className="text-sm text-white/80">
+                                    Wallet: <span className="font-mono text-emerald-400">{maskAddress(user.walletAddress)}</span>
+                                </p>
+                            ) : (
+                                <div className="w-full max-w-md">
+                                    <WalletConnection />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 {/* Recent Activity */}

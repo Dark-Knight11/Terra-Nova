@@ -84,6 +84,7 @@ export const api = {
                 body: JSON.stringify(data),
             }),
 
+        // Deprecated - use wallet linking flow instead
         getNonce: (address: string) =>
             request<{ nonce: string; message: string }>(`/auth/nonce/${address}`),
 
@@ -93,11 +94,15 @@ export const api = {
                 body: JSON.stringify(data),
             }),
 
-        generateLinkingNonce: (address: string) =>
-            request<{ nonce: string; message: string }>(`/auth/generate-linking-nonce/${address}`),
+        // Generate a nonce for wallet linking (protected endpoint)
+        generateLinkingNonce: () =>
+            request<{ nonce: string }>('/wallets/link/nonce', {
+                method: 'POST',
+            }),
 
-        linkWallet: (data: { message: string; signature: string; walletAddress: string }) =>
-            request<{ user: any; accessToken: string; refreshToken: string }>('/auth/link-wallet', {
+        // Link wallet to the authenticated user
+        linkWallet: (data: { message: string; signature: string }) =>
+            request<{ user: any }>('/wallets/link', {
                 method: 'POST',
                 body: JSON.stringify(data),
             }),

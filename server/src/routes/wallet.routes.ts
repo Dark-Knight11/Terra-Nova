@@ -12,4 +12,8 @@ router.get('/:address', walletController.getWalletByAddress);
 router.post('/', authenticateToken, walletController.registerWallet);
 router.put('/:id', authenticateToken, walletController.updateWalletStatus);
 
+// Wallet linking endpoints
+router.post('/link/nonce', authenticateToken, walletController.generateLinkNonce);
+router.post('/link', authenticateToken, walletController.linkWallet);
+
 export default router;

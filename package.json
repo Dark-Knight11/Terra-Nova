@@ -16,6 +16,7 @@
     "server:studio": "cd server && npm run prisma:studio"
   },
   "dependencies": {
+    "buffer": "^6.0.3",
     "gsap": "^3.13.0",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",

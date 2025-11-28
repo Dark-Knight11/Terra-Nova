@@ -13,24 +13,24 @@ const MARKETPLACE_ABI = [
     'function createFixedPriceListing(uint256 _projectId, uint256 _amount, uint256 _price) external returns (uint256)',
     'function buyFixedPrice(uint256 _listingId) external payable',
     'function cancelListing(uint256 _listingId) external',
-    
+
     // English Auction
     'function createEnglishAuction(uint256 _projectId, uint256 _amount, uint256 _startingPrice, uint256 _reservePrice, uint256 _duration) external returns (uint256)',
     'function placeBid(uint256 _listingId) external payable',
     'function finalizeAuction(uint256 _listingId) external',
-    
+
     // Dutch Auction
     'function createDutchAuction(uint256 _projectId, uint256 _amount, uint256 _startingPrice, uint256 _reservePrice, uint256 _priceDecrement, uint256 _decrementInterval, uint256 _duration) external returns (uint256)',
     'function buyDutchAuction(uint256 _listingId) external payable',
     'function getCurrentDutchPrice(uint256 _listingId) external view returns (uint256)',
-    
+
     // View Functions
     'function getListing(uint256 _listingId) external view returns (tuple(uint256 listingId, uint256 projectId, address seller, uint256 amount, uint256 startingPrice, uint256 reservePrice, uint256 currentPrice, address highestBidder, uint256 startTime, uint256 endTime, uint8 auctionType, uint8 status))',
     'function getSellerListings(address _seller) external view returns (uint256[])',
     'function getListingBids(uint256 _listingId) external view returns (tuple(address bidder, uint256 amount, uint256 timestamp)[])',
     'function withdraw() external',
     'function pendingWithdrawals(address) external view returns (uint256)',
-    
+
     // Events
     'event ListingCreated(uint256 indexed listingId, uint256 indexed projectId, address indexed seller, uint256 amount, uint256 startingPrice, uint8 auctionType)',
     'event BidPlaced(uint256 indexed listingId, address indexed bidder, uint256 amount, uint256 timestamp)',
@@ -46,7 +46,7 @@ const TOKEN_ABI = [
     'function balanceOf(address account, uint256 id) view returns (uint256)',
     'function balanceOf(address owner) view returns (uint256)',
     'function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data) external',
-    
+
     // Project Management
     'function submitProject(string memory _projectName, uint8 _category, uint8 _primaryGasType, string memory _country, string memory _registry, address _consultant, string memory _verificationDocHash, uint256 _vintageYear) external returns (uint256)',
     'function getProjectBasicInfo(uint256 _projectId) external view returns (tuple(uint256 projectId, string projectName, address projectDeveloper, address consultant, address auditor, uint8 category, uint8 primaryGasType))',
@@ -55,12 +55,12 @@ const TOKEN_ABI = [
     'function getDeveloperProjects(address _developer) external view returns (uint256[])',
     'function getTotalProjects() external view returns (uint256)',
     'function projectExists(uint256 _projectId) external view returns (bool)',
-    
+
     // Admin Functions (for Registry role)
     'function mintCredits(uint256 _projectId, uint256 _amount, string memory _monitoringReportHash) external',
     'function approveProject(uint256 _projectId) external',
     'function assignAuditor(uint256 _projectId, address _auditor) external',
-    
+
     // Events
     'event ProjectSubmitted(uint256 indexed projectId, address indexed developer, string projectName, uint8 category)',
     'event CreditMinted(address indexed to, uint256 amount, uint256 projectId)',
@@ -118,11 +118,7 @@ export const ProjectStatus = {
     Completed: 5
 } as const;
 
-declare global {
-    interface Window {
-        ethereum: any;
-    }
-}
+
 
 export interface Listing {
     listingId: string;
@@ -167,7 +163,7 @@ export class ContractService {
 
     constructor() {
         if (typeof window !== 'undefined' && window.ethereum) {
-            this.provider = new ethers.BrowserProvider(window.ethereum);
+            this.provider = new ethers.BrowserProvider(window.ethereum as any);
         }
     }
 
@@ -191,7 +187,7 @@ export class ContractService {
     // Switch to Sepolia network
     async switchToSepolia(): Promise<void> {
         if (!window.ethereum) throw new Error("No wallet found");
-        
+
         try {
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
@@ -224,7 +220,7 @@ export class ContractService {
         if (!isCorrectNetwork) {
             await this.switchToSepolia();
             // Re-initialize provider after network switch
-            this.provider = new ethers.BrowserProvider(window.ethereum);
+            this.provider = new ethers.BrowserProvider(window.ethereum as any);
         }
 
         await this.provider.send("eth_requestAccounts", []);
@@ -235,7 +231,7 @@ export class ContractService {
         this.tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, this.signer);
         this.nftContract = new ethers.Contract(NFT_ADDRESS, NFT_ABI, this.signer);
 
-        return this.connectedAddress;
+        return this.connectedAddress!;
     }
 
     private async ensureConnected(): Promise<void> {
