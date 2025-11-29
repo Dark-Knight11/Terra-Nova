@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Coins, Shield, Store, TrendingUp, Award, CheckCircle, Sparkles } from 'lucide-react';
+import { Coins, Shield, Store, TrendingUp, CheckCircle, Sparkles, FileText } from 'lucide-react';
 
 interface LifecycleStage {
     id: number;
@@ -9,11 +9,19 @@ interface LifecycleStage {
     status: 'completed' | 'active' | 'pending';
 }
 
-interface CarbonCreditLifecycleProps {
-    currentStage?: number; // 1-5, defaults to showing all completed
+interface LifecycleAddresses {
+    developer?: string;
+    auditor?: string;
+    marketplace?: string;
+    token?: string;
 }
 
-const CarbonCreditLifecycle: React.FC<CarbonCreditLifecycleProps> = ({ currentStage = 5 }) => {
+interface CarbonCreditLifecycleProps {
+    currentStage?: number; // 1-5, defaults to showing all completed
+    addresses?: LifecycleAddresses;
+}
+
+const CarbonCreditLifecycle: React.FC<CarbonCreditLifecycleProps> = ({ currentStage = 5, addresses }) => {
     const [hoveredStage, setHoveredStage] = useState<number | null>(null);
     const [revealedStages, setRevealedStages] = useState<number>(0);
     const [isAnimating, setIsAnimating] = useState(true);
@@ -40,10 +48,10 @@ const CarbonCreditLifecycle: React.FC<CarbonCreditLifecycleProps> = ({ currentSt
     const stages: LifecycleStage[] = [
         {
             id: 1,
-            name: 'Minting',
-            description: 'Carbon credits created on-chain via ERC-1155 smart contract standard',
-            icon: Coins,
-            status: currentStage >= 1 ? 'completed' : 'pending',
+            name: 'Initiation',
+            description: 'Project proposal submitted by developer for initial review',
+            icon: FileText,
+            status: currentStage >= 1 ? (currentStage === 1 ? 'active' : 'completed') : 'pending',
         },
         {
             id: 2,
@@ -54,26 +62,45 @@ const CarbonCreditLifecycle: React.FC<CarbonCreditLifecycleProps> = ({ currentSt
         },
         {
             id: 3,
-            name: 'Listing',
-            description: 'Project listed on decentralized marketplace for transparent trading',
-            icon: Store,
+            name: 'Minting',
+            description: 'Carbon credits created on-chain via ERC-1155 smart contract standard',
+            icon: Coins,
             status: currentStage >= 3 ? (currentStage === 3 ? 'active' : 'completed') : 'pending',
         },
         {
             id: 4,
-            name: 'Trading',
-            description: 'Credits traded between verified buyers and sellers on the platform',
-            icon: TrendingUp,
+            name: 'Listing',
+            description: 'Project listed on decentralized marketplace for transparent trading',
+            icon: Store,
             status: currentStage >= 4 ? (currentStage === 4 ? 'active' : 'completed') : 'pending',
         },
         {
             id: 5,
-            name: 'Retirement',
-            description: 'Credits permanently retired on-chain with certificate generation',
-            icon: Award,
+            name: 'Trading',
+            description: 'Credits traded between verified buyers and sellers on the platform',
+            icon: TrendingUp,
             status: currentStage >= 5 ? (currentStage === 5 ? 'active' : 'completed') : 'pending',
         },
     ];
+
+    const getStageAddress = (stageId: number): string | undefined => {
+        if (!addresses) return undefined;
+        switch (stageId) {
+            case 1: return addresses.developer;
+            case 2: return addresses.auditor;
+            case 3: return addresses.token;
+            case 4: return addresses.marketplace;
+            case 5: return addresses.marketplace;
+            default: return undefined;
+        }
+    };
+
+    const handleStageClick = (stageId: number) => {
+        const address = getStageAddress(stageId);
+        if (address && address !== '0x0000000000000000000000000000000000000000') {
+            window.open(`https://sepolia.etherscan.io/address/${address}`, '_blank');
+        }
+    };
 
     const getStageColor = (status: string) => {
         switch (status) {
@@ -181,17 +208,21 @@ const CarbonCreditLifecycle: React.FC<CarbonCreditLifecycleProps> = ({ currentSt
                             const Icon = stage.icon;
                             const isHovered = hoveredStage === stage.id;
                             const isRevealed = revealedStages > index;
+                            const address = getStageAddress(stage.id);
+                            const isClickable = !!address && address !== '0x0000000000000000000000000000000000000000';
 
                             return (
                                 <div
                                     key={stage.id}
                                     className={`flex flex-col items-center transition-all duration-500 ${isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                                        }`}
+                                        } ${isClickable ? 'cursor-pointer' : ''}`}
                                     style={{
                                         transitionDelay: isAnimating ? `${index * 300}ms` : '0ms'
                                     }}
                                     onMouseEnter={() => setHoveredStage(stage.id)}
                                     onMouseLeave={() => setHoveredStage(null)}
+                                    onClick={() => handleStageClick(stage.id)}
+                                    title={isClickable ? `View on Etherscan: ${address}` : undefined}
                                 >
                                     {/* Stage Icon Container */}
                                     <div className="relative mb-6 group">

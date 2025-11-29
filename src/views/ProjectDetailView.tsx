@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Shield, ExternalLink, Copy, Loader2 } from 'lucide-react';
+import { ChevronLeft, Activity, CheckCircle, Clock, Wallet, Shield, ExternalLink, Copy, Loader2, ShoppingBag } from 'lucide-react';
 import CarbonCreditLifecycle from '../components/CarbonCreditLifecycle';
+import AgenticAnalysisOverlay from '../components/AgenticAnalysisOverlay';
 import { api } from '../api/client';
 import { contractService } from '../services/contractService';
 
@@ -18,6 +19,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
     const [onChainData, setOnChainData] = useState<any>(null);
     const [loadingChainData, setLoadingChainData] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showAgenticAnalysis, setShowAgenticAnalysis] = useState(false);
 
     useEffect(() => {
         const fetchCredits = async () => {
@@ -67,6 +69,31 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
 
     const contractAddresses = contractService.getContractAddresses();
     const projectWallet = selectedProject.wallet || onChainData?.projectDeveloper || '0x...';
+
+    const calculateLifecycleStage = () => {
+        // 1. Marketplace Listing Context
+        if (selectedProject?.listing) {
+            // If it's a listing, it's in Trading stage
+            return 5; // Trading
+        }
+
+        // 2. On-Chain Project Data Context
+        if (onChainData) {
+            const status = Number(onChainData.status);
+            switch (status) {
+                case 0: return 1; // Submitted -> Initiation
+                case 1: return 2; // Under Audit -> Verification
+                case 2: return 3; // Approved -> Minting
+                case 3: return 1; // Rejected -> Back to Initiation
+                case 4: return 5; // Active -> Trading (Implies Listing done)
+                case 5: return 5; // Completed -> Trading (or Retirement, but mapped to Trading as per user request)
+                default: return 1;
+            }
+        }
+
+        // 3. Fallback for static/mock data
+        return 5; // Default to Trading for demo purposes
+    };
 
     return (
         <div className="pt-24 px-6 pb-20 min-h-screen">
@@ -118,7 +145,15 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
 
                                     {/* Carbon Credit Lifecycle Visualization */}
                                     <div className="my-8">
-                                        <CarbonCreditLifecycle currentStage={onChainData?.status ? parseInt(onChainData.status) + 1 : 5} />
+                                        <CarbonCreditLifecycle
+                                            currentStage={calculateLifecycleStage()}
+                                            addresses={{
+                                                developer: onChainData?.projectDeveloper || selectedProject.wallet,
+                                                auditor: onChainData?.auditor,
+                                                marketplace: contractAddresses.marketplace,
+                                                token: contractAddresses.token
+                                            }}
+                                        />
                                     </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
@@ -335,10 +370,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
 
                             <div className="space-y-4 mb-8">
                                 <button
-                                    onClick={onTrade}
+                                    onClick={() => setShowAgenticAnalysis(true)}
                                     className="w-full py-4 bg-white text-black rounded-lg font-medium hover:scale-[1.02] transition-transform text-lg flex items-center justify-center gap-2"
                                 >
-                                    <Activity size={20} /> Trade on Market
+                                    <ShoppingBag size={20} /> Purchase Credits
                                 </button>
                             </div>
 
@@ -377,6 +412,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                     </div>
                 </div>
             </div>
+
+            {/* Agentic Analysis Overlay */}
+            {showAgenticAnalysis && (
+                <AgenticAnalysisOverlay
+                    onClose={() => setShowAgenticAnalysis(false)}
+                    onComplete={() => {
+                        setShowAgenticAnalysis(false);
+                        onTrade();
+                    }}
+                />
+            )}
         </div>
     );
 };
