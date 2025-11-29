@@ -1,31 +1,4 @@
 import { ethers } from 'ethers';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-// Read .env file manually
-function loadEnv() {
-    try {
-        const envPath = join(process.cwd(), 'server', '.env');
-        const envFile = readFileSync(envPath, 'utf-8');
-        const env: Record<string, string> = {};
-
-        envFile.split('\n').forEach(line => {
-            const match = line.match(/^([^=:#]+)=(.*)$/);
-            if (match) {
-                const key = match[1].trim();
-                const value = match[2].trim();
-                env[key] = value;
-            }
-        });
-
-        return env;
-    } catch (error) {
-        console.error('❌ Could not read server/.env file');
-        return {};
-    }
-}
-
-const env = loadEnv();
 
 const CARBON_CREDIT_ABI = [
     'function grantRole(bytes32 role, address account) external',
@@ -35,28 +8,23 @@ const CARBON_CREDIT_ABI = [
 ];
 
 async function grantRegistryRole() {
-    // Configuration
-    const RPC_URL = env.ETHEREUM_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY';
-    const PRIVATE_KEY = env.PRIVATE_KEY; // Admin wallet private key
-    const CONTRACT_ADDRESS = env.CONTRACT_ADDRESS;
+    // Configuration - Read from environment variables
+    const RPC_URL = process.env.ETHEREUM_RPC_URL || 'https://sepolia.infura.io/v3/a489d1777b30400c846653d2c03de7d2';
+    const PRIVATE_KEY = process.env.PRIVATE_KEY; // From command line
+    const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xcd0b420f1ab141c0D411E43f23F68d6A80650e90';
 
     // The wallet address you want to grant REGISTRY_ROLE to
     const REGISTRY_WALLET = process.argv[2];
 
     if (!REGISTRY_WALLET) {
         console.error('❌ Error: Please provide the registry wallet address as an argument');
-        console.log('Usage: npx tsx grant_registry_role.ts <WALLET_ADDRESS>');
+        console.log('Usage: PRIVATE_KEY=<key> npx tsx grant_registry_role.ts <WALLET_ADDRESS>');
         process.exit(1);
     }
 
     if (!PRIVATE_KEY) {
-        console.error('❌ Error: PRIVATE_KEY not found in server/.env file');
-        console.log('Please add your admin wallet private key to server/.env');
-        process.exit(1);
-    }
-
-    if (!CONTRACT_ADDRESS) {
-        console.error('❌ Error: CONTRACT_ADDRESS not found in server/.env file');
+        console.error('❌ Error: PRIVATE_KEY not provided');
+        console.log('Usage: PRIVATE_KEY=<your_private_key> npx tsx grant_registry_role.ts <WALLET_ADDRESS>');
         process.exit(1);
     }
 
