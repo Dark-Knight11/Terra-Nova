@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Wind, Search, Loader2, RefreshCw } from 'lucide-react';
 import MarketCard from '../components/MarketCard';
 import { contractService, ProjectCategory } from '../services/contractService';
+import { MarketplaceChat } from '../components/MarketplaceChat';
+import AgenticAnalysisOverlay from '../components/AgenticAnalysisOverlay';
 
 interface MarketplaceViewProps {
     handleProjectClick: (project: any) => void;
@@ -18,6 +20,10 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [totalOnChainProjects, setTotalOnChainProjects] = useState<number>(0);
+
+    // Chat & Purchase State
+    const [showAnalysisOverlay, setShowAnalysisOverlay] = useState(false);
+    const [purchaseIntent, setPurchaseIntent] = useState<{ listing: any; quantity: number } | null>(null);
 
     // Fetch credits from backend and on-chain data
     useEffect(() => {
@@ -115,6 +121,42 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
             return matchesSearch && matchesType && matchesRegion && matchesPrice;
         });
     }, [searchQuery, selectedTypes, selectedRegion, priceRange, credits]);
+
+    // Chat Purchase Handler
+    const handlePurchaseIntent = (listing: any, quantity: number) => {
+        setPurchaseIntent({ listing, quantity });
+        setShowAnalysisOverlay(true);
+    };
+
+    // Execute Trade Logic
+    const executeTrade = async () => {
+        if (!purchaseIntent || !contractService.isWalletAvailable()) return;
+
+        try {
+            const { listing, quantity } = purchaseIntent;
+            const pricePerUnit = parseFloat(listing.price);
+            const totalEthCost = (pricePerUnit * quantity).toFixed(6); // Ensure precision
+
+            console.log(`Executing trade for ${quantity} credits of listing ${listing.id} at ${totalEthCost} ETH`);
+
+            // Trigger MetaMask transaction
+            const txHash = await contractService.buyFixedPrice(listing.id, totalEthCost);
+            console.log('Transaction submitted:', txHash);
+
+            // Reset state
+            setShowAnalysisOverlay(false);
+            setPurchaseIntent(null);
+
+            // Refresh credits
+            fetchCredits();
+
+            // Optional: Show success toast/notification
+            alert(`Transaction submitted! Hash: ${txHash}`);
+        } catch (err) {
+            console.error('Trade execution failed:', err);
+            alert('Trade failed. Please check console for details.');
+        }
+    };
 
     return (
         <div className="pt-32 px-6 pb-20 min-h-screen">
@@ -315,6 +357,22 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                     </div>
                 </div>
             </div>
+
+            {/* Chat Interface */}
+            <MarketplaceChat
+                credits={credits}
+                onPurchaseIntent={handlePurchaseIntent}
+            />
+
+            {/* Agentic Analysis Overlay */}
+            {showAnalysisOverlay && purchaseIntent && (
+                <AgenticAnalysisOverlay
+                    initialPrice={purchaseIntent.listing.price}
+                    maxQuantity={parseInt(purchaseIntent.listing.amount)}
+                    onClose={() => setShowAnalysisOverlay(false)}
+                    onComplete={executeTrade}
+                />
+            )}
         </div>
     );
 };
