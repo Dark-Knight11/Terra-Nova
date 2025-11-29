@@ -1,73 +1,74 @@
-# React + TypeScript + Vite
+# Terra Nova - Mumbai Hacks'25
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Track
+Finance
 
-Currently, two official plugins are available:
+## Problem Statement 
+The carbon market today is opaque, expensive, and unreliable.
+Project developers face high registration costs, long approval cycles, and extreme price volatility, making climate finance unpredictable.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Buyers cannot verify the integrity or authenticity of credits, and the absence of transparency leads to fraud, double counting, and loss of trust.
 
-## React Compiler
+There is no fair pricing, no liquidity, and no automation for discovering or purchasing high-quality credits.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Overview of the App
+Carbon Block is a decentralized carbon credit protocol that brings full transparency, fair pricing, and intelligent automation to the carbon market.
+It manages the entire lifecycle of carbon credits on-chain, uses an Integrity Scoring Engine to assess credit quality, provides AMM-based fair pricing with liquidity pools, and deploys Agentic AI to help buyers automatically discover, evaluate, purchase, and retire credits, all with verifiable on-chain proof.
 
-## Expanding the ESLint configuration
+## Table of Contents
+- [Features](#features)
+- [Technologies Used](#tech-stack)
+- [Repository Links](#repository-links)
+- [Contributors](#contributors)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**1. Carbon Credit Lifecycle**: Manages the complete journey of a carbon credit from project creation to audit, registry approval, minting, transfer, and final retirement on-chain.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**2. Carbon Integrity Scoring Engine**: Scores every credit based on scientific, financial, and verification parameters to provide a transparent 0–100 Carbon Quality Index.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**3. Marketplace & Liquidity Layer**: Enables fair, transparent trading using autonomous market making, liquidity pools, and real-time price discovery.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**4. Agentic AI System**: AI autonomously discovers, evaluates, prices, purchases, and retires carbon credits with zero human intervention.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+**5. User Experience & Access Layer**: Provides dashboards, fractional credits, ESG reporting, and secure wallet-based access for enterprises, developers, and retail buyers.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**6. Platform Infrastructure Layer**: Blockchain-powered, secure, interoperable architecture designed to integrate with multiple registries and India’s 2026 carbon market.
+
+
+## Tech Stack
+
+### Frontend (Terra-Nova)
+
+- React 19 + Vite
+- GSAP, Three.js
+- siwe (Sign-In with Ethereum)
+
+### Backend (Terra-Nova/server)
+
+- Node-Express
+- TypeScript
+- NeonDB PostgreSQL
+- ethers.js (v6)
+
+### AI 
+- OpenServ Labs SDK,
+- Gemini 3 pro
+
+## Blockchain (Smart_Contracts)
+- Foundry
+- Solidity
+- OpenZeppelin Contracts
+
+## Repository Links
+
+- [Smart Contracts](https://github.com/Vedang456/Mumbai-Hacks-Contracts)
+- [Frontend Repository](https://github.com/Dark-Knight11/Terra-Nova)
+- [Backend Repository](https://github.com/Dark-Knight11/Terra-Nova)
+
+## Contributors
+
+- **Mehul Aswar**
+- **Anshika Sah**
+- **Vedang Limaye**
+- **Vedant Bhamare**
