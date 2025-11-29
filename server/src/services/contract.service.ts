@@ -163,7 +163,6 @@ class ContractService {
 
                 // Strategy: If we have a CarbonCredit with this name and no projectId, update it.
                 try {
-                    // @ts-ignore
                     const credit = await prisma.carbonCredit.findFirst({
                         where: {
                             title: name,
@@ -172,7 +171,6 @@ class ContractService {
                     });
 
                     if (credit) {
-                        // @ts-ignore
                         await prisma.carbonCredit.update({
                             where: { id: credit.id },
                             data: {
@@ -191,7 +189,6 @@ class ContractService {
             contract.on('ProjectApproved', async (projectId, _event) => {
                 Logger.info('ProjectApproved event detected', { projectId });
                 try {
-                    // @ts-ignore
                     await prisma.carbonCredit.update({
                         where: { projectId: projectId.toString() },
                         data: { status: 'APPROVED' }
@@ -222,7 +219,6 @@ class ContractService {
 
                 // Update volume/credits in DB
                 try {
-                    // @ts-ignore
                     const credit = await prisma.carbonCredit.findUnique({
                         where: { projectId: projectId.toString() }
                     });
@@ -235,7 +231,6 @@ class ContractService {
                         // For now, let's just log it.
 
                         // Actually, Company model has 'credits' field.
-                        // @ts-ignore
                         await prisma.company.update({
                             where: { id: credit.companyId },
                             data: {
@@ -267,7 +262,6 @@ class ContractService {
             contract.on('ListingCreated', async (listingId, projectId, seller, amount, startingPrice, _auctionType, _event) => {
                 Logger.info('ListingCreated event detected', { listingId, projectId, seller });
                 try {
-                    // @ts-ignore
                     await prisma.listing.create({
                         data: {
                             listingId: listingId.toString(),
@@ -287,11 +281,9 @@ class ContractService {
             contract.on('FixedPriceSale', async (listingId, buyer, amount, price, _event) => {
                 Logger.info('FixedPriceSale event detected', { listingId, buyer });
                 try {
-                    // @ts-ignore
                     const listing = await prisma.listing.findUnique({ where: { listingId: listingId.toString() } });
 
                     // Create Trade
-                    // @ts-ignore
                     await prisma.trade.create({
                         data: {
                             listingId: listingId.toString(),
@@ -307,7 +299,6 @@ class ContractService {
                     // For simplicity, if it's a one-off listing, mark as COMPLETED. 
                     // If partial fills are allowed, we'd need to check remaining amount.
                     // The contract `buyFixedPrice` seems to complete the auction.
-                    // @ts-ignore
                     await prisma.listing.update({
                         where: { listingId: listingId.toString() },
                         data: { status: 'COMPLETED' }
@@ -322,10 +313,8 @@ class ContractService {
             contract.on('AuctionCompleted', async (listingId, winner, finalPrice, amount, _event) => {
                 Logger.info('AuctionCompleted event detected', { listingId, winner });
                 try {
-                    // @ts-ignore
                     const listing = await prisma.listing.findUnique({ where: { listingId: listingId.toString() } });
 
-                    // @ts-ignore
                     await prisma.trade.create({
                         data: {
                             listingId: listingId.toString(),
@@ -337,7 +326,6 @@ class ContractService {
                         }
                     });
 
-                    // @ts-ignore
                     await prisma.listing.update({
                         where: { listingId: listingId.toString() },
                         data: { status: 'COMPLETED' }
@@ -351,7 +339,6 @@ class ContractService {
             contract.on('AuctionCancelled', async (listingId, seller, _event) => {
                 Logger.info('AuctionCancelled event detected', { listingId, seller });
                 try {
-                    // @ts-ignore
                     await prisma.listing.update({
                         where: { listingId: listingId.toString() },
                         data: { status: 'CANCELLED' }

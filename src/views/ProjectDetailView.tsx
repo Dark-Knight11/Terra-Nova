@@ -38,12 +38,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
     // Fetch on-chain data if project has a projectId
     useEffect(() => {
         const fetchOnChainData = async () => {
-            if (selectedProject?.projectId || selectedProject?.id) {
+            if (selectedProject?.projectId) {
                 setLoadingChainData(true);
                 try {
                     if (contractService.isWalletAvailable()) {
                         await contractService.connectWallet();
-                        const projectId = selectedProject.projectId || selectedProject.id;
+                        const projectId = selectedProject.projectId;
                         const data = await contractService.getProjectInfo(projectId.toString());
                         setOnChainData(data);
                     }

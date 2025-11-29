@@ -245,6 +245,12 @@ export const api = {
         getEvents: () =>
             request<{ events: any[] }>('/contracts/events'),
     },
+
+    // Market endpoints
+    market: {
+        getListings: () =>
+            request<any[]>('/market'),
+    },
 };
 
 // Token management helpers

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { contractService, AUDITOR_ROLE, REGISTRY_ROLE, type ProjectInfo } from '../../services/contractService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AuditorDashboard: React.FC = () => {
+    const { user } = useAuth();
     const [projects, setProjects] = useState<ProjectInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
@@ -11,14 +13,25 @@ const AuditorDashboard: React.FC = () => {
     const [hasRegistryRole, setHasRegistryRole] = useState<boolean>(true);
 
     useEffect(() => {
-        checkRole();
-        loadProjects();
-    }, []);
-
-    const checkRole = async () => {
-        try {
+        if (user?.walletAddress) {
+            checkRole(user.walletAddress);
+        } else if (contractService.isWalletAvailable()) {
+            // Optional: Check if connected
             const address = contractService.getConnectedAddress();
+            if (address) checkRole(address);
+        }
+        loadProjects();
+    }, [user]);
+
+    const checkRole = async (address: string) => {
+        try {
             if (address) {
+                // We can check role using the read-only provider if we pass the address
+                // But hasRole implementation might need update to accept address?
+                // contractService.hasRole takes (role, account).
+                // It calls ensureConnected(). We should update hasRole too!
+
+                // For now, let's assume we update hasRole to be read-only compatible
                 const isAuditor = await contractService.hasRole(AUDITOR_ROLE, address);
                 const isRegistry = await contractService.hasRole(REGISTRY_ROLE, address);
                 setHasAuditorRole(isAuditor);
@@ -44,6 +57,13 @@ const AuditorDashboard: React.FC = () => {
     };
 
     const handleApprove = async (project: ProjectInfo) => {
+        try {
+            await contractService.connectWallet();
+        } catch (err) {
+            alert("Please connect your wallet to approve projects.");
+            return;
+        }
+
         if (!hasRegistryRole) {
             alert("You do not have the Registry role required to approve projects. Please contact the admin.");
             return;

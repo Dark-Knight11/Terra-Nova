@@ -41,8 +41,8 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
                 console.log('Chain connection optional:', chainErr);
             }
 
-            // Fetch from backend API
-            const data = await api.credits.getAll();
+            // Fetch active listings from backend API
+            const data = await api.market.getListings();
             setCredits(data);
 
             // Extract unique types and regions from data

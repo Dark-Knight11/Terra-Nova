@@ -160,6 +160,8 @@ export interface ProjectInfo {
     approvedAt: number;
     totalCreditsIssued: string;
     totalCreditsRetired: string;
+    verificationDocHash: string;
+    monitoringReportHash: string;
 }
 
 export class ContractService {
@@ -260,8 +262,8 @@ export class ContractService {
             this.provider = new ethers.BrowserProvider(window.ethereum as any);
         }
 
-        // Request permissions to force account selection
-        await this.provider.send("wallet_requestPermissions", [{ eth_accounts: {} }]);
+        // Request permissions to force account selection - REMOVED to allow persistence
+        // await this.provider.send("wallet_requestPermissions", [{ eth_accounts: {} }]);
         await this.provider.send("eth_requestAccounts", []);
         this.signer = await this.provider.getSigner();
         this.connectedAddress = await this.signer.getAddress();
@@ -375,8 +377,14 @@ export class ContractService {
     }
 
     async hasRole(role: string, account: string): Promise<boolean> {
-        await this.ensureConnected();
-        return await this.tokenContract!.hasRole(role, account);
+        // Read-only, no need to ensure connected if provider is available
+        if (!this.provider) return false;
+        try {
+            return await this.tokenContract!.hasRole(role, account);
+        } catch (error) {
+            console.error(`Failed to check role ${role} for ${account}:`, error);
+            return false;
+        }
     }
 
     async assignAuditor(projectId: string, auditorAddress: string): Promise<void> {
@@ -392,23 +400,18 @@ export class ContractService {
     }
 
     async getProjectInfo(projectId: string): Promise<ProjectInfo | null> {
-        await this.ensureConnected();
+        // Read-only, no need to ensure connected if provider is available
+        if (!this.provider) throw new Error("Provider not initialized");
 
         try {
-            console.log(`Checking if project ${projectId} exists...`);
+            // console.log(`Checking if project ${projectId} exists...`);
             const exists = await this.retry(() => this.tokenContract!.projectExists(projectId));
-            console.log(`Project ${projectId} exists: ${exists}`);
+            // console.log(`Project ${projectId} exists: ${exists}`);
 
             if (!exists) return null;
 
-            console.log(`Fetching basic info for project ${projectId}...`);
             const basicInfo = await this.retry(() => this.tokenContract!.getProjectBasicInfo(projectId));
-            console.log('Basic info received:', basicInfo);
-
-            console.log(`Fetching details for project ${projectId}...`);
             const details = await this.retry(() => this.tokenContract!.getProjectDetailsStruct(projectId));
-
-            console.log(`Fetching credits for project ${projectId}...`);
             const credits = await this.retry(() => this.tokenContract!.getProjectCredits(projectId));
 
             return {
@@ -426,7 +429,9 @@ export class ContractService {
                 createdAt: Number(details.createdAt),
                 approvedAt: Number(details.approvedAt),
                 totalCreditsIssued: credits.totalCreditsIssued.toString(),
-                totalCreditsRetired: credits.totalCreditsRetired.toString()
+                totalCreditsRetired: credits.totalCreditsRetired.toString(),
+                verificationDocHash: credits.verificationDocHash,
+                monitoringReportHash: credits.monitoringReportHash
             };
         } catch (error) {
             console.error(`Error fetching project info for ${projectId}:`, error);
@@ -640,10 +645,21 @@ export class ContractService {
         }
     }
 
-    async getSellerListings(): Promise<string[]> {
-        await this.ensureConnected();
-        const listingIds = await this.marketplaceContract!.getSellerListings(this.connectedAddress);
-        return listingIds.map((id: bigint) => id.toString());
+    async getSellerListings(seller?: string): Promise<string[]> {
+        if (!seller) {
+            await this.ensureConnected();
+        }
+
+        const target = seller || this.connectedAddress;
+        if (!target) throw new Error("No address provided for fetching listings");
+
+        try {
+            const listingIds = await this.marketplaceContract!.getSellerListings(target);
+            return listingIds.map((id: bigint) => id.toString());
+        } catch (error) {
+            console.error('Failed to get seller listings:', error);
+            return [];
+        }
     }
 
     async getCurrentDutchPrice(listingId: string): Promise<string> {

@@ -1,37 +1,38 @@
+import { useAuth } from '../../contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Package, Clock, Plus, Loader2, ExternalLink, Wallet, AlertCircle, Coins, Tag } from 'lucide-react';
-import { contractService, ProjectCategory, GasType, type ProjectInfo } from '../../services/contractService';
+import { contractService, ProjectCategory, GasType } from '../../services/contractService';
+import type { ProjectInfo, Listing } from '../../services/contractService';
+import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Coins, Tag, ExternalLink } from 'lucide-react';
 import ProjectDetailsModal from '../../components/dashboard/ProjectDetailsModal';
 import CreateListingModal from '../../components/dashboard/CreateListingModal';
 
+interface NewProjectState {
+    projectName: string;
+    category: number;
+    gasType: number;
+    country: string;
+    registry: string;
+    consultant: string;
+    verificationDocHash: string;
+    vintageYear: number;
+}
+
 const CompanyDashboard: React.FC = () => {
+    const { user } = useAuth();
     const [walletConnected, setWalletConnected] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [projects, setProjects] = useState<ProjectInfo[]>([]);
-    const [listings, setListings] = useState<any[]>([]);
-    const [showCreateProject, setShowCreateProject] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-
-    // Modal State
-    const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);
-    const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [showListingModal, setShowListingModal] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [mintingProjectId, setMintingProjectId] = useState<string | null>(null);
+    const [projects, setProjects] = useState<ProjectInfo[]>([]);
+    const [listings, setListings] = useState<Listing[]>([]);
+    const [showCreateProject, setShowCreateProject] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);
+    const [showListingModal, setShowListingModal] = useState(false);
 
-
-    // Form state for new project
-    const [newProject, setNewProject] = useState<{
-        projectName: string;
-        category: number;
-        gasType: number;
-        country: string;
-        registry: string;
-        consultant: string;
-        verificationDocHash: string;
-        vintageYear: number;
-    }>({
+    const [newProject, setNewProject] = useState<NewProjectState>({
         projectName: '',
         category: ProjectCategory.Reforestation,
         gasType: GasType.CO2,
@@ -44,15 +45,18 @@ const CompanyDashboard: React.FC = () => {
 
     useEffect(() => {
         initializeDashboard();
-    }, []);
+    }, [user]);
 
     const initializeDashboard = async () => {
         setLoading(true);
         try {
-            if (contractService.isWalletAvailable()) {
-                await contractService.connectWallet();
+            // If user has a persisted wallet address, use it to fetch data
+            if (user?.walletAddress) {
                 setWalletConnected(true);
-                await fetchUserData();
+                await fetchUserData(user.walletAddress);
+            } else if (contractService.isWalletAvailable()) {
+                // Optional: Check if already connected in MetaMask without prompting
+                // For now, we rely on the DB persistence as requested
             }
         } catch (err) {
             console.error('Failed to initialize dashboard:', err);
@@ -66,22 +70,23 @@ const CompanyDashboard: React.FC = () => {
             setError(null);
             await contractService.connectWallet();
             setWalletConnected(true);
-            await fetchUserData();
+            const address = contractService.getConnectedAddress();
+            if (address) await fetchUserData(address);
         } catch (err: any) {
             setError(err.message || 'Failed to connect wallet');
         }
     };
 
-    const fetchUserData = async () => {
+    const fetchUserData = async (address: string) => {
         try {
-            // Get user's projects
-            const projectIds = await contractService.getDeveloperProjects();
+            // Get user's projects using the provided address
+            const projectIds = await contractService.getDeveloperProjects(address);
             const projectPromises = projectIds.map(id => contractService.getProjectInfo(id));
             const projectInfos = await Promise.all(projectPromises);
             setProjects(projectInfos.filter((p): p is ProjectInfo => p !== null));
 
             // Get user's listings
-            const listingIds = await contractService.getSellerListings();
+            const listingIds = await contractService.getSellerListings(address);
             const listingPromises = listingIds.map(id => contractService.getListing(id));
             const listingInfos = await Promise.all(listingPromises);
             setListings(listingInfos.filter(l => l !== null));
@@ -92,7 +97,14 @@ const CompanyDashboard: React.FC = () => {
 
     const handleCreateProject = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!walletConnected) return;
+
+        // Ensure wallet is actually connected before submitting
+        try {
+            await contractService.connectWallet();
+        } catch (err) {
+            setError("Please connect your wallet to submit a project.");
+            return;
+        }
 
         setSubmitting(true);
         setError(null);
@@ -132,7 +144,13 @@ const CompanyDashboard: React.FC = () => {
     };
 
     const handleMintCredits = async (projectId: string) => {
-        if (!walletConnected) return;
+        try {
+            await contractService.connectWallet();
+        } catch (err) {
+            setError("Please connect your wallet to mint credits.");
+            return;
+        }
+
         setMintingProjectId(projectId);
         setError(null);
 

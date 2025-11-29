@@ -121,26 +121,75 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onCl
                         <h4 className="text-sm font-medium text-white/80 mb-4 flex items-center gap-2">
                             <Clock size={16} className="text-emerald-500" /> Project Timeline
                         </h4>
-                        <div className="relative pl-4 border-l border-white/10 space-y-6">
+                        <div className="relative pl-4 border-l border-white/10 space-y-8">
+                            {/* 1. Submitted */}
                             <div className="relative">
-                                <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-emerald-500"></div>
-                                <div className="text-sm text-white">Project Submitted</div>
-                                <div className="text-xs text-white/40">{new Date(project.createdAt * 1000).toLocaleString()}</div>
+                                <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-[#0a0a0a]"></div>
+                                <div className="text-sm font-medium text-white">Project Submitted</div>
+                                <div className="text-xs text-white/40 mt-1">{new Date(project.createdAt * 1000).toLocaleString()}</div>
+                                <div className="text-xs text-white/30 mt-0.5 font-mono">
+                                    By: {project.projectDeveloper.substring(0, 6)}...{project.projectDeveloper.substring(38)}
+                                </div>
                             </div>
-                            {project.approvedAt > 0 && (
+
+                            {/* 2. Under Audit */}
+                            <div className="relative">
+                                <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full ring-4 ring-[#0a0a0a] ${project.status >= 1 ? 'bg-blue-500' : 'bg-white/10'
+                                    }`}></div>
+                                <div className={`text-sm font-medium ${project.status >= 1 ? 'text-white' : 'text-white/40'}`}>
+                                    Under Audit
+                                </div>
+                                {project.status >= 1 ? (
+                                    <>
+                                        <div className="text-xs text-white/40 mt-1">
+                                            {project.status > 1 ? 'Audit Completed' : 'In Progress'}
+                                        </div>
+                                        {project.auditor !== '0x0000000000000000000000000000000000000000' && (
+                                            <div className="text-xs text-white/30 mt-0.5 font-mono">
+                                                Auditor: {project.auditor.substring(0, 6)}...{project.auditor.substring(38)}
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-xs text-white/20 mt-1">Pending Review</div>
+                                )}
+                            </div>
+
+                            {/* 3. Approval / Rejection */}
+                            {(project.status === 2 || project.status === 3 || project.status === 0 || project.status === 1) && (
                                 <div className="relative">
-                                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-emerald-500"></div>
-                                    <div className="text-sm text-white">Project Approved</div>
-                                    <div className="text-xs text-white/40">{new Date(project.approvedAt * 1000).toLocaleString()}</div>
+                                    <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full ring-4 ring-[#0a0a0a] ${project.status === 2 ? 'bg-emerald-500' :
+                                            project.status === 3 ? 'bg-red-500' : 'bg-white/10'
+                                        }`}></div>
+                                    <div className={`text-sm font-medium ${project.status >= 2 ? 'text-white' : 'text-white/40'}`}>
+                                        {project.status === 3 ? 'Project Rejected' : 'Project Approved'}
+                                    </div>
+                                    {project.status === 2 && (
+                                        <div className="text-xs text-white/40 mt-1">
+                                            {new Date(project.approvedAt * 1000).toLocaleString()}
+                                        </div>
+                                    )}
+                                    {project.status < 2 && (
+                                        <div className="text-xs text-white/20 mt-1">Pending Approval</div>
+                                    )}
                                 </div>
                             )}
-                            {parseInt(project.totalCreditsIssued) > 0 && (
-                                <div className="relative">
-                                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-emerald-500"></div>
-                                    <div className="text-sm text-white">Credits Issued</div>
-                                    <div className="text-xs text-white/40">Total: {parseInt(project.totalCreditsIssued).toLocaleString()}</div>
+
+                            {/* 4. Issuance */}
+                            <div className="relative">
+                                <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full ring-4 ring-[#0a0a0a] ${parseInt(project.totalCreditsIssued) > 0 ? 'bg-emerald-500' : 'bg-white/10'
+                                    }`}></div>
+                                <div className={`text-sm font-medium ${parseInt(project.totalCreditsIssued) > 0 ? 'text-white' : 'text-white/40'}`}>
+                                    Credits Issued
                                 </div>
-                            )}
+                                {parseInt(project.totalCreditsIssued) > 0 ? (
+                                    <div className="text-xs text-white/40 mt-1">
+                                        Total: {parseInt(project.totalCreditsIssued).toLocaleString()} Credits
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-white/20 mt-1">Pending Issuance</div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
