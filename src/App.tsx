@@ -160,7 +160,6 @@ const App = () => {
               setActiveTab={setActiveTab}
               handleProjectClick={handleProjectClick}
               onViewCompany={() => setActiveTab('company')}
-              onTrade={() => setActiveTab('trading')}
             />
           )}
           {activeTab === 'trading' && selectedProject && (

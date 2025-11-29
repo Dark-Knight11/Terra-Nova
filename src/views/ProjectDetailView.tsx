@@ -10,10 +10,9 @@ interface ProjectDetailViewProps {
     setActiveTab: (tab: string) => void;
     handleProjectClick: (project: any) => void;
     onViewCompany: () => void;
-    onTrade: () => void;
 }
 
-const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick, onViewCompany, onTrade }) => {
+const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, setActiveTab, handleProjectClick, onViewCompany }) => {
     const [detailTab, setDetailTab] = useState('overview'); // overview, audit, company
     const [credits, setCredits] = useState<any[]>([]);
     const [onChainData, setOnChainData] = useState<any>(null);

@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
 import { contractService, ProjectCategory, GasType } from '../../services/contractService';
 import type { ProjectInfo, Listing } from '../../services/contractService';
-import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Tag, ExternalLink, Coins, FileText, UploadCloud, CheckCircle, X } from 'lucide-react';
+import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Tag, ExternalLink, FileText, UploadCloud, CheckCircle, X } from 'lucide-react';
 import ProjectDetailsModal from '../../components/dashboard/ProjectDetailsModal';
 import CreateListingModal from '../../components/dashboard/CreateListingModal';
 
@@ -29,7 +29,7 @@ const CompanyDashboard: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const [mintingProjectId, setMintingProjectId] = useState<string | null>(null);
+
     const [projects, setProjects] = useState<ProjectWithBalance[]>([]);
     const [listings, setListings] = useState<Listing[]>([]);
     const [showCreateProject, setShowCreateProject] = useState(false);
@@ -236,29 +236,7 @@ const CompanyDashboard: React.FC = () => {
         }
     };
 
-    const handleMintCredits = async (projectId: string) => {
-        try {
-            await contractService.connectWallet();
-        } catch (err) {
-            setError("Please connect your wallet to mint credits.");
-            return;
-        }
 
-        setMintingProjectId(projectId);
-        setError(null);
-
-        try {
-            // Mint 1000 credits for demo
-            await contractService.mintCredits(projectId, "1000");
-            setSuccess(`Successfully minted 1000 credits for Project #${projectId}`);
-            await fetchUserData();
-        } catch (err: any) {
-            console.error('Failed to mint credits:', err);
-            setError(err.message || 'Failed to mint credits');
-        } finally {
-            setMintingProjectId(null);
-        }
-    };
 
 
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, ChevronRight, Sparkles, Shield } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, ChevronRight, Shield } from 'lucide-react';
 
 interface MarketplaceChatProps {
     credits: any[];
