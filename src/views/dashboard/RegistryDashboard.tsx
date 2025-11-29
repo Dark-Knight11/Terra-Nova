@@ -4,11 +4,7 @@ import type { ProjectInfo } from '../../services/contractService';
 import { ProjectStatus } from '../../services/contractService';
 import { Coins, CheckCircle, RefreshCw } from 'lucide-react';
 
-interface RegistryDashboardProps {
-    connectedAddress: string | null;
-}
-
-export const RegistryDashboard: React.FC<RegistryDashboardProps> = () => {
+export const RegistryDashboard: React.FC = () => {
     const [projects, setProjects] = useState<ProjectInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);

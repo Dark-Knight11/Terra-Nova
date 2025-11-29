@@ -18,6 +18,10 @@ interface NewProjectState {
     vintageYear: number;
 }
 
+interface ProjectWithBalance extends ProjectInfo {
+    userBalance: string;
+}
+
 const CompanyDashboard: React.FC = () => {
     const { user } = useAuth();
     const [walletConnected, setWalletConnected] = useState(false);
@@ -26,11 +30,11 @@ const CompanyDashboard: React.FC = () => {
     const [success, setSuccess] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [mintingProjectId, setMintingProjectId] = useState<string | null>(null);
-    const [projects, setProjects] = useState<ProjectInfo[]>([]);
+    const [projects, setProjects] = useState<ProjectWithBalance[]>([]);
     const [listings, setListings] = useState<Listing[]>([]);
     const [showCreateProject, setShowCreateProject] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);
+    const [selectedProject, setSelectedProject] = useState<ProjectWithBalance | null>(null);
     const [showListingModal, setShowListingModal] = useState(false);
 
     const [newProject, setNewProject] = useState<NewProjectState>({
@@ -94,9 +98,15 @@ const CompanyDashboard: React.FC = () => {
 
             // Get user's projects using the provided address
             const projectIds = await contractService.getDeveloperProjects();
-            const projectPromises = projectIds.map(id => contractService.getProjectInfo(id));
+            const projectPromises = projectIds.map(async (id) => {
+                const info = await contractService.getProjectInfo(id);
+                if (!info) return null;
+                const balance = await contractService.getTokenBalance(id);
+                return { ...info, userBalance: balance };
+            });
+
             const projectInfos = await Promise.all(projectPromises);
-            setProjects(projectInfos.filter((p): p is ProjectInfo => p !== null));
+            setProjects(projectInfos.filter((p): p is ProjectWithBalance => p !== null));
 
             // Get user's listings
             const listingIds = await contractService.getSellerListings(targetAddress);
@@ -252,12 +262,12 @@ const CompanyDashboard: React.FC = () => {
 
 
 
-    const handleViewProject = (project: ProjectInfo) => {
+    const handleViewProject = (project: ProjectWithBalance) => {
         setSelectedProject(project);
         setShowDetailsModal(true);
     };
 
-    const handleListProject = (project: ProjectInfo) => {
+    const handleListProject = (project: ProjectWithBalance) => {
         setSelectedProject(project);
         setShowListingModal(true);
     };
@@ -445,8 +455,8 @@ const CompanyDashboard: React.FC = () => {
                                         <td className="px-6 py-4">{getCategoryLabel(project.category)}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-white">{parseInt(project.totalCreditsIssued).toLocaleString()}</span>
-                                                <span className="text-xs text-white/30">Issued</span>
+                                                <span className="text-white">{parseInt(project.userBalance).toLocaleString()}</span>
+                                                <span className="text-xs text-white/30">Available</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -718,7 +728,7 @@ const CompanyDashboard: React.FC = () => {
             {showListingModal && selectedProject && (
                 <CreateListingModal
                     projectId={selectedProject.projectId}
-                    maxAmount={parseInt(selectedProject.totalCreditsIssued) - parseInt(selectedProject.totalCreditsRetired)}
+                    maxAmount={parseInt(selectedProject.userBalance)}
                     onClose={() => setShowListingModal(false)}
                     onSuccess={() => {
                         setSuccess('Listing created successfully!');
