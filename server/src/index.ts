@@ -49,6 +49,18 @@ app.use(express.urlencoded({ extended: true }));
 // Request logging
 app.use(requestLogger);
 
+// Health check endpoint (before API routes, no auth required)
+app.get('/health', (_req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '1.0.0',
+        service: 'DCCP Backend'
+    });
+});
+
 // API routes
 app.use('/api', routes);
 

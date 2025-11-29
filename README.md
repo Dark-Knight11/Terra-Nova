@@ -1,4 +1,4 @@
-# Terra Nova - Mumbai Hacks'25
+# Carbon Block - Mumbai Hacks'25
 
 ## Track
 Finance

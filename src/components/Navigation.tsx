@@ -38,7 +38,7 @@ const Navigation: React.FC<NavigationProps> = ({
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-blue-500 flex items-center justify-center">
                         <Leaf size={16} className="text-white" />
                     </div>
-                    Terra Nova
+                    Carbon Block
                 </button>
 
                 <div className="hidden md:flex items-center gap-8">

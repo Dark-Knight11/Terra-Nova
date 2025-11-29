@@ -35,7 +35,7 @@ const AgenticAnalysisOverlay: React.FC<AgenticAnalysisOverlayProps> = ({ onCompl
             try {
                 const payload = {
                     initialPrice: parseFloat(initialPrice.toString().replace(/[^0-9.]/g, '')) || 0,
-                    projectName: "Terra Nova Project"
+                    projectName: "Carbon Block Project"
                 };
                 console.log("📤 Sending Payload to Webhook:", payload);
 

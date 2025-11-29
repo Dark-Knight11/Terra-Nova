@@ -103,7 +103,7 @@ const GovernanceView = () => {
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
                     <div>
                         <h1 className="font-serif text-5xl mb-2">Governance</h1>
-                        <p className="text-white/50">Decentralized decision making for the Terra Nova Protocol.</p>
+                        <p className="text-white/50">Decentralized decision making for the Carbon Block Protocol.</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-lg text-right w-full md:w-auto">
                         <div className="text-xs text-white/40 uppercase tracking-widest">Your Voting Power</div>
@@ -283,7 +283,7 @@ const GovernanceView = () => {
                     <div className="mt-12 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-center">
                         <h3 className="text-lg font-serif mb-2">Have a proposal?</h3>
                         <p className="text-white/50 text-sm mb-4">
-                            Token holders can create proposals to improve the Terra Nova protocol.
+                            Token holders can create proposals to improve the Carbon Block protocol.
                         </p>
                         <button className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-medium rounded-lg transition-colors">
                             Create Proposal

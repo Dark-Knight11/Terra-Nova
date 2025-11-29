@@ -177,7 +177,7 @@ const App = () => {
                 <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-500 to-blue-500 flex items-center justify-center">
                   <Leaf size={12} className="text-white" />
                 </div>
-                Terra Nova
+                Carbon Block
               </div>
               <p className="text-white/40 text-sm">
                 Building the infrastructure for a net-zero economy. Transparent, secure, and decentralized.
