@@ -22,7 +22,7 @@ const envOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') :
 const corsOrigin = [...defaultOrigins, ...envOrigin];
 
 app.use(cors({
-    origin: corsOrigin,
+    origin: '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
