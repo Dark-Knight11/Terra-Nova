@@ -37,10 +37,9 @@
         "helmet": "^8.0.0",
         "joi": "^17.13.3",
         "jsonwebtoken": "^9.0.2",
-        "openai": "^6.9.1",
         "siwe": "^2.3.2",
         "ws": "^8.18.3",
-        "zod": "^4.1.13"
+        "zod": "^3.23.8"
     },
     "devDependencies": {
         "@types/bcrypt": "^5.0.2",
