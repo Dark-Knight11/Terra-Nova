@@ -20,6 +20,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
     const [loadingChainData, setLoadingChainData] = useState(false);
     const [copied, setCopied] = useState(false);
     const [showAgenticAnalysis, setShowAgenticAnalysis] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
+
+    useEffect(() => {
+        setIsConnected(!!contractService.getConnectedAddress());
+    }, []);
 
     useEffect(() => {
         const fetchCredits = async () => {
@@ -369,22 +374,28 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
                             </div>
 
                             <div className="space-y-4 mb-8">
-                                <button
-                                    onClick={() => setShowAgenticAnalysis(true)}
-                                    className="w-full py-4 bg-white text-black rounded-lg font-medium hover:scale-[1.02] transition-transform text-lg flex items-center justify-center gap-2"
-                                >
-                                    <ShoppingBag size={20} /> Purchase Credits
-                                </button>
+                                {isConnected ? (
+                                    <button
+                                        onClick={() => setShowAgenticAnalysis(true)}
+                                        className="w-full py-4 bg-white text-black rounded-lg font-medium hover:scale-[1.02] transition-transform text-lg flex items-center justify-center gap-2"
+                                    >
+                                        <ShoppingBag size={20} /> Purchase Credits
+                                    </button>
+                                ) : (
+                                    <div className="w-full py-4 bg-white/5 text-white/40 rounded-lg font-medium text-center border border-white/10">
+                                        Connect Wallet to Purchase
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-4 pt-6 border-t border-white/10">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-white/50">Available Supply</span>
                                     <span className="font-mono">
-                                        {onChainData
-                                            ? `${(parseInt(onChainData.totalCreditsIssued) - parseInt(onChainData.totalCreditsRetired)).toLocaleString()} tCO2e`
-                                            : '4,200 tCO2e'
-                                        }
+                                        {/* availableSupply will be defined before the return statement */}
+                                        {selectedProject?.listing
+                                            ? parseInt(selectedProject.listing.amount).toLocaleString()
+                                            : (onChainData ? (parseInt(onChainData.totalCreditsIssued) - parseInt(onChainData.totalCreditsRetired)).toLocaleString() : '4,200')} tCO2e
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
@@ -416,10 +427,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ selectedProject, 
             {/* Agentic Analysis Overlay */}
             {showAgenticAnalysis && (
                 <AgenticAnalysisOverlay
+                    initialPrice={selectedProject.price || '0'}
+                    maxQuantity={
+                        selectedProject?.listing
+                            ? parseInt(selectedProject.listing.amount)
+                            : (onChainData ? parseInt(onChainData.totalCreditsIssued) - parseInt(onChainData.totalCreditsRetired) : 4200)
+                    }
                     onClose={() => setShowAgenticAnalysis(false)}
                     onComplete={() => {
                         setShowAgenticAnalysis(false);
-                        onTrade();
+                        console.log("Trade executed (mock)");
+                        // onTrade(); // Disabled to prevent navigation as per user request
                     }}
                 />
             )}
