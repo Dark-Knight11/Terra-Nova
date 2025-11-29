@@ -192,6 +192,23 @@ export const api = {
 
         getById: (id: string) =>
             request<any>(`/credits/${id}`),
+
+        create: (data: any) =>
+            request<{ data: any }>('/credits', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+
+        update: (id: string, data: any) =>
+            request<{ data: any }>(`/credits/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data),
+            }),
+
+        delete: (id: string) =>
+            request(`/credits/${id}`, {
+                method: 'DELETE',
+            }),
     },
 
     // Wallets endpoints
@@ -250,6 +267,12 @@ export const api = {
     market: {
         getListings: () =>
             request<any[]>('/market'),
+
+        create: (data: any) =>
+            request<{ data: any }>('/market', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
     },
 };
 

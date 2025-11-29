@@ -113,3 +113,29 @@ export const getListings = asyncHandler(async (_req: Request, res: Response) => 
         data: result
     });
 });
+
+export const createListing = asyncHandler(async (req: Request, res: Response) => {
+    const { listingId, projectId, seller, amount, price } = req.body;
+
+    if (!listingId || !projectId || !seller || !amount || !price) {
+        res.status(400);
+        throw new Error('Missing required fields');
+    }
+
+    // @ts-ignore
+    const listing = await prisma.listing.create({
+        data: {
+            listingId: listingId.toString(),
+            projectId: projectId.toString(),
+            seller,
+            amount: amount.toString(),
+            price: price.toString(),
+            status: 'ACTIVE'
+        }
+    });
+
+    res.status(201).json({
+        success: true,
+        data: listing
+    });
+});

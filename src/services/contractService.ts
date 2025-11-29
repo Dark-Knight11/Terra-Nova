@@ -652,6 +652,39 @@ export class ContractService {
         }
     }
 
+    async getAllListings(): Promise<Listing[]> {
+        await this.ensureConnected();
+        const listings: Listing[] = [];
+        let consecutiveFailures = 0;
+        const MAX_FAILURES = 3;
+        const MAX_LISTINGS = 50; // Safety limit for demo
+
+        console.log('Fetching all listings from chain...');
+
+        for (let i = 1; i <= MAX_LISTINGS; i++) {
+            try {
+                const listing = await this.getListing(i.toString());
+                if (listing) {
+                    // Only include active listings (Status 0 = Active)
+                    if (listing.status === 0) {
+                        listings.push(listing);
+                    }
+                    consecutiveFailures = 0;
+                } else {
+                    consecutiveFailures++;
+                }
+            } catch (err) {
+                consecutiveFailures++;
+            }
+
+            if (consecutiveFailures >= MAX_FAILURES) {
+                break;
+            }
+        }
+
+        return listings;
+    }
+
     async getSellerListings(seller?: string): Promise<string[]> {
         if (!seller) {
             await this.ensureConnected();

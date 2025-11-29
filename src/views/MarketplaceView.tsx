@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Wind, Search, Loader2, RefreshCw } from 'lucide-react';
 import MarketCard from '../components/MarketCard';
-import { api } from '../api/client';
-import { contractService } from '../services/contractService';
+import { contractService, ProjectCategory } from '../services/contractService';
 
 interface MarketplaceViewProps {
     handleProjectClick: (project: any) => void;
@@ -30,41 +29,57 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({ handleProjectClick })
             setIsLoading(true);
             setError(null);
 
-            // Try to get total projects from chain
-            try {
-                if (contractService.isWalletAvailable()) {
-                    await contractService.connectWallet();
-                    const total = await contractService.getTotalProjects();
-                    setTotalOnChainProjects(total);
-                }
-            } catch (chainErr) {
-                console.log('Chain connection optional:', chainErr);
+            // Fetch listings directly from chain
+            if (contractService.isWalletAvailable()) {
+                await contractService.connectWallet();
+                const total = await contractService.getTotalProjects();
+                setTotalOnChainProjects(total);
+
+                const listings = await contractService.getAllListings();
+
+                // Fetch project details for each listing
+                const creditsWithDetails = await Promise.all(listings.map(async (listing) => {
+                    const projectInfo = await contractService.getProjectInfo(listing.projectId);
+                    if (!projectInfo) return null;
+
+                    return {
+                        id: listing.listingId,
+                        projectId: listing.projectId,
+                        title: projectInfo.projectName,
+                        type: Object.keys(ProjectCategory)[projectInfo.category] || 'REFORESTATION', // Map category index to string
+                        price: listing.currentPrice, // Already formatted as string in getAllListings -> getListing
+                        amount: listing.amount,
+                        location: projectInfo.country,
+                        score: 95, // Mock score for now
+                        company: {
+                            name: projectInfo.projectDeveloper, // Use developer address as name for now
+                            verificationStatus: 'VERIFIED'
+                        },
+                        image: 'https://images.unsplash.com/photo-1622383563227-044011dd8597?auto=format&fit=crop&q=80&w=1000', // Placeholder
+                        description: `Vintage: ${projectInfo.vintageYear}`,
+                        listing: listing
+                    };
+                }));
+
+                const validCredits = creditsWithDetails.filter(Boolean);
+                setCredits(validCredits);
+
+                // Extract unique types and regions
+                const types = Array.from(new Set(validCredits.map((c: any) => c.type))).filter(Boolean) as string[];
+                const regions = Array.from(new Set(validCredits.map((c: any) => c.location))).filter(Boolean) as string[];
+
+                setAvailableTypes(types);
+                setAvailableRegions(regions);
+            } else {
+                throw new Error("Wallet not available");
             }
 
-            // Fetch active listings from backend API
-            const data = await api.market.getListings();
-            setCredits(data);
-
-            // Extract unique types and regions from data
-            const types = Array.from(new Set(data.map((c: any) => c.type))).filter(Boolean) as string[];
-            const regions = Array.from(new Set(data.map((c: any) => c.location))).filter(Boolean) as string[];
-
-            setAvailableTypes(types);
-            setAvailableRegions(regions);
         } catch (err: any) {
-            console.error('Failed to fetch credits:', err);
-            setError('Failed to load credits from server. Showing demo data.');
+            console.error('Failed to fetch credits from chain:', err);
+            setError('Failed to load credits from blockchain. Please connect your wallet.');
 
-            // Fallback to mock data
-            const { credits: mockCredits } = await import('../data/mockData');
-            setCredits(mockCredits);
-
-            // Extract unique types and regions from mock data
-            const types = Array.from(new Set(mockCredits.map((c: any) => c.type))).filter(Boolean) as string[];
-            const regions = Array.from(new Set(mockCredits.map((c: any) => c.location))).filter(Boolean) as string[];
-
-            setAvailableTypes(types);
-            setAvailableRegions(regions);
+            // Fallback to empty or mock if needed, but user requested chain data
+            setCredits([]);
         } finally {
             setIsLoading(false);
         }

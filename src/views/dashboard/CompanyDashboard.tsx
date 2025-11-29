@@ -1,8 +1,9 @@
+import { api } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
 import { contractService, ProjectCategory, GasType } from '../../services/contractService';
 import type { ProjectInfo, Listing } from '../../services/contractService';
-import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Tag, ExternalLink } from 'lucide-react';
+import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Tag, ExternalLink, Coins, FileText, UploadCloud, CheckCircle, X } from 'lucide-react';
 import ProjectDetailsModal from '../../components/dashboard/ProjectDetailsModal';
 import CreateListingModal from '../../components/dashboard/CreateListingModal';
 
@@ -43,6 +44,11 @@ const CompanyDashboard: React.FC = () => {
         vintageYear: new Date().getFullYear()
     });
 
+    // File Upload State
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
     useEffect(() => {
         initializeDashboard();
     }, [user]);
@@ -77,22 +83,70 @@ const CompanyDashboard: React.FC = () => {
         }
     };
 
-    const fetchUserData = async (address: string) => {
+    const fetchUserData = async (address?: string) => {
         try {
+            const targetAddress = address || user?.walletAddress || contractService.getConnectedAddress();
+
+            if (!targetAddress) {
+                console.warn('No wallet address available to fetch user data');
+                return;
+            }
+
             // Get user's projects using the provided address
-            const projectIds = await contractService.getDeveloperProjects(address);
+            const projectIds = await contractService.getDeveloperProjects();
             const projectPromises = projectIds.map(id => contractService.getProjectInfo(id));
             const projectInfos = await Promise.all(projectPromises);
             setProjects(projectInfos.filter((p): p is ProjectInfo => p !== null));
 
             // Get user's listings
-            const listingIds = await contractService.getSellerListings(address);
+            const listingIds = await contractService.getSellerListings(targetAddress);
             const listingPromises = listingIds.map(id => contractService.getListing(id));
             const listingInfos = await Promise.all(listingPromises);
             setListings(listingInfos.filter(l => l !== null));
         } catch (err) {
             console.error('Failed to fetch user data:', err);
         }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            // Validate file type/size if needed
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                setError("File size exceeds 10MB limit");
+                return;
+            }
+            setSelectedFile(file);
+            simulateUpload(file);
+        }
+    };
+
+    const simulateUpload = (file: File) => {
+        setUploading(true);
+        setUploadProgress(0);
+        setError(null);
+        console.log(`Starting upload for ${file.name}...`);
+
+        // Simulate upload progress
+        const interval = setInterval(() => {
+            setUploadProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    setUploading(false);
+                    // Generate mock IPFS hash
+                    const mockHash = `ipfs://Qm${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+                    setNewProject(prev => ({ ...prev, verificationDocHash: mockHash }));
+                    return 100;
+                }
+                return prev + 10;
+            });
+        }, 200);
+    };
+
+    const removeFile = () => {
+        setSelectedFile(null);
+        setUploadProgress(0);
+        setNewProject(prev => ({ ...prev, verificationDocHash: '' }));
     };
 
     const handleCreateProject = async (e: React.FormEvent) => {
@@ -120,6 +174,35 @@ const CompanyDashboard: React.FC = () => {
                 newProject.verificationDocHash || `ipfs://project-${Date.now()}`,
                 newProject.vintageYear
             );
+
+            // Sync with backend API
+            try {
+                const creditTypeMap: Record<number, string> = {
+                    0: 'RENEWABLE_ENERGY',
+                    1: 'REFORESTATION',
+                    2: 'RENEWABLE_ENERGY',
+                    3: 'PRESERVATION',
+                    4: 'BLUE_CARBON',
+                    5: 'PRESERVATION',
+                    6: 'PRESERVATION'
+                };
+
+                await api.credits.create({
+                    title: newProject.projectName,
+                    type: creditTypeMap[newProject.category] || 'REFORESTATION',
+                    price: 0, // Initial price
+                    location: newProject.country,
+                    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2560&auto=format&fit=crop', // Default image
+                    description: `Project ID: ${result.projectId}. Registry: ${newProject.registry}. Consultant: ${newProject.consultant}`,
+                    vintage: newProject.vintageYear.toString(),
+                    volume: '0', // Initial volume
+                    methodology: newProject.registry
+                });
+                console.log('Project synced to backend successfully');
+            } catch (apiErr) {
+                console.error('Failed to sync project to backend:', apiErr);
+                // Don't fail the UI flow since blockchain tx succeeded
+            }
 
             setSuccess(`Project submitted successfully! Project ID: ${result.projectId}`);
             setShowCreateProject(false);
@@ -373,13 +456,29 @@ const CompanyDashboard: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
+                                                {/* Mint Button (Demo) */}
+                                                <button
+                                                    onClick={() => handleMintCredits(project.projectId)}
+                                                    disabled={mintingProjectId === project.projectId || project.status !== 2} // Disable if not approved
+                                                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title={project.status !== 2 ? "Project must be approved to mint" : "Mint 1000 Credits (Demo)"}
+                                                >
+                                                    {mintingProjectId === project.projectId ? (
+                                                        <Loader2 size={16} className="animate-spin" />
+                                                    ) : (
+                                                        <Coins size={16} />
+                                                    )}
+                                                </button>
+
+
+
                                                 {/* List Button */}
                                                 <button
                                                     onClick={() => handleListProject(project)}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                                                    className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                                    title="List on Marketplace"
                                                 >
                                                     <Tag size={16} />
-                                                    List on Marketplace
                                                 </button>
 
                                                 {/* View Button */}
@@ -539,24 +638,78 @@ const CompanyDashboard: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Verification Document (IPFS Hash)</label>
+                                <label className="block text-xs text-white/40 uppercase tracking-wider mb-2">Verification Document</label>
+
+                                {!selectedFile ? (
+                                    <div className="border-2 border-dashed border-white/10 rounded-lg p-6 hover:border-emerald-500/30 transition-colors text-center group cursor-pointer relative">
+                                        <input
+                                            type="file"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            onChange={handleFileSelect}
+                                            accept=".pdf,.doc,.docx"
+                                        />
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="p-3 bg-white/5 rounded-full group-hover:bg-emerald-500/10 transition-colors">
+                                                <UploadCloud className="w-6 h-6 text-white/40 group-hover:text-emerald-400" />
+                                            </div>
+                                            <p className="text-sm text-white/60 font-medium">Click to upload verification document</p>
+                                            <p className="text-xs text-white/30">PDF, DOC up to 10MB</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                                    <FileText className="w-5 h-5 text-emerald-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-white font-medium truncate max-w-[200px]">{selectedFile.name}</p>
+                                                    <p className="text-xs text-white/40">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={removeFile}
+                                                className="p-1 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                                            <div
+                                                className="bg-emerald-500 h-full transition-all duration-300"
+                                                style={{ width: `${uploadProgress}%` }}
+                                            />
+                                        </div>
+
+                                        {uploadProgress === 100 && (
+                                            <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-400">
+                                                <CheckCircle size={12} />
+                                                <span>Upload complete</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Hidden input to maintain form logic if needed, though we update state directly */}
                                 <input
-                                    type="text"
+                                    type="hidden"
                                     value={newProject.verificationDocHash}
-                                    onChange={(e) => setNewProject({ ...newProject, verificationDocHash: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50"
-                                    placeholder="ipfs://..."
+                                    required
                                 />
                             </div>
 
                             <div className="pt-4 border-t border-white/10">
                                 <button
                                     type="submit"
-                                    disabled={submitting}
+                                    disabled={submitting || uploading}
                                     className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-medium py-3 rounded-lg transition-all disabled:opacity-50 flex justify-center items-center gap-2"
                                 >
-                                    {submitting && <Loader2 className="animate-spin w-4 h-4" />}
-                                    Submit Project
+                                    {(submitting || uploading) && <Loader2 className="animate-spin w-4 h-4" />}
+                                    {uploading ? 'Uploading Document...' : 'Submit Project'}
                                 </button>
                                 <p className="text-xs text-white/40 text-center mt-3">
                                     Your project will be reviewed by an auditor before credits can be issued.

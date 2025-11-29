@@ -23,14 +23,15 @@ const CARBON_CREDIT_ABI = [
     'event Transfer(address indexed from, address indexed to, uint256 value)',
     'event CreditMinted(address indexed to, uint256 amount, uint256 projectId)',
     'event ProjectCreated(uint256 indexed projectId, string name, uint8 category, uint8 gasType)',
-    'event ProjectApproved(uint256 indexed projectId)'
+    'event ProjectApproved(uint256 indexed projectId)',
+    'event ProjectSubmitted(uint256 indexed projectId, address indexed developer, string projectName, uint8 category)'
 ];
 
 const MARKETPLACE_ABI = [
     'event ListingCreated(uint256 indexed listingId, uint256 indexed projectId, address indexed seller, uint256 amount, uint256 startingPrice, uint8 auctionType)',
     'event FixedPriceSale(uint256 indexed listingId, address indexed buyer, uint256 amount, uint256 price)',
     'event AuctionCompleted(uint256 indexed listingId, address indexed winner, uint256 finalPrice, uint256 amount)',
-    'event AuctionCancelled(uint256 indexed listingId, address indexed seller)'
+    'event AuctionCancelled(uint256 indexed listingId, address indexed seller)',
 ];
 
 interface ProjectDetails {
@@ -199,6 +200,92 @@ class ContractService {
                 }
             });
 
+            // Project Submitted
+            contract.on('ProjectSubmitted', async (projectId, developer, projectName, category, event) => {
+                Logger.info('ProjectSubmitted event detected', { projectId, developer, projectName });
+                console.log('I was called vedant')
+
+                try {
+                    // Fetch the transaction to decode input data
+                    const tx = await event.getTransaction();
+                    // We need the full function signature to decode the transaction input
+                    // Adding the function to the interface if it's not already there (it's not in the ABI array above)
+                    // But we can't easily add to `contract.interface` dynamically if it was initialized with a fixed ABI.
+                    // However, we can use a temporary interface or ensure the function is in the ABI.
+
+                    // Let's check if the function is in the ABI. It is NOT.
+                    // We need to add the function definition to the ABI constant first.
+                    // Assuming we will add it, or we can use a local interface.
+
+                    const SUBMISSION_FRAGMENT = 'function submitProject(string memory _projectName, uint8 _category, uint8 _primaryGasType, string memory _country, string memory _registry, address _consultant, string memory _verificationDocHash, uint256 _vintageYear) external returns (uint256)';
+                    const iface = new ethers.Interface([SUBMISSION_FRAGMENT]);
+
+                    const decoded = iface.parseTransaction({ data: tx.data, value: tx.value });
+
+                    if (!decoded) {
+                        Logger.warn('Failed to decode transaction input for project submission');
+                        return;
+                    }
+
+                    // Extract args from decoded transaction
+                    const args = decoded.args;
+                    // args: [_projectName, _category, _primaryGasType, _country, _registry, _consultant, _verificationDocHash, _vintageYear]
+                    const country = args[3];
+                    const registry = args[4];
+                    const vintageYear = args[7];
+
+                    // Find the company
+                    const company = await prisma.company.findUnique({
+                        where: { walletAddress: developer }
+                    });
+
+                    if (!company) {
+                        Logger.warn(`Company not found for wallet ${developer}, creating project without company link or skipping`);
+                        // We can still create it but without company link? Or just skip.
+                        // Let's skip for now as per previous logic.
+                        return;
+                    }
+
+                    // Map Category to CreditType
+                    const creditTypeMap: Record<number, string> = {
+                        0: 'RENEWABLE_ENERGY',
+                        1: 'REFORESTATION',
+                        2: 'RENEWABLE_ENERGY',
+                        3: 'PRESERVATION',
+                        4: 'BLUE_CARBON',
+                        5: 'PRESERVATION',
+                        6: 'PRESERVATION'
+                    };
+
+                    const creditType = creditTypeMap[Number(category)] || 'REFORESTATION';
+
+                    // Create CarbonCredit record
+                    await prisma.carbonCredit.create({
+                        data: {
+                            title: projectName,
+                            type: creditType as any,
+                            price: 0,
+                            score: 0,
+                            location: country || 'Unknown',
+                            image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2560&auto=format&fit=crop',
+                            companyId: company.id,
+                            companyName: company.name,
+                            description: `Project ID: ${projectId}. A ${creditType} project in ${country}. Registry: ${registry}.`,
+                            vintage: vintageYear.toString(),
+                            volume: '0',
+                            methodology: registry || 'Verra VCS',
+                            walletAddress: developer,
+                            projectId: projectId.toString()
+                        }
+                    });
+
+                    Logger.info(`Project ${projectId} persisted to database via transaction decoding`);
+
+                } catch (err) {
+                    Logger.error('Error indexing ProjectSubmitted', err);
+                }
+            });
+
             Logger.info('Listening for Project events');
         } catch (error) {
             Logger.error('Failed to setup project listener', { error });
@@ -246,6 +333,8 @@ class ContractService {
 
                 callback(to, amount, projectId);
             });
+
+
 
             Logger.info('Listening for CreditMinted events');
         } catch (error) {

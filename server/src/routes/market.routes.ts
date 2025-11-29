@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getMarketData, getChartData, getListings } from '../controllers/market.controller';
+import { getMarketData, getChartData, getListings, createListing } from '../controllers/market.controller';
 
 const router = Router();
 
 router.get('/', getListings);
+router.post('/', createListing);
 router.get('/:projectId', getMarketData);
 router.get('/:projectId/chart', getChartData);
 
