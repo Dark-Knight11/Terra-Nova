@@ -16,16 +16,30 @@ const PORT = process.env.PORT || 3002;
 app.use(helmet());
 
 // CORS configuration
-// CORS configuration
-const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const defaultOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://tera-nova.netlify.app'
+];
 const envOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
 const corsOrigin = [...defaultOrigins, ...envOrigin];
 
 app.use(cors({
-    origin: '*',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, Postman, curl)
+        if (!origin) return callback(null, true);
+
+        if (corsOrigin.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn(`CORS blocked request from origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Length', 'X-Request-Id']
 }));
 
 // Body parsing middleware
@@ -51,6 +65,12 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
+    // Explicit console output for deployment platforms
+    console.log(`✓ DCCP Backend Server is running on port ${PORT}`);
+    console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✓ CORS Origins: ${corsOrigin.join(', ')}`);
+    console.log(`✓ Server ready to accept connections`);
+
     Logger.info(`Server running on port ${PORT}`, {
         environment: process.env.NODE_ENV || 'development',
         corsOrigin
@@ -63,8 +83,10 @@ app.listen(PORT, () => {
         contractService.listenForCreditMints((to, amount, projectId) => {
             Logger.info('Credit Minted', { to, amount: amount.toString(), projectId: projectId.toString() });
         });
+        console.log('✓ Contract Service listeners started');
         Logger.info('Contract Service listeners started');
     }).catch(err => {
+        console.error('✗ Failed to start Contract Service listeners:', err);
         Logger.error('Failed to start Contract Service listeners', err);
     });
 
