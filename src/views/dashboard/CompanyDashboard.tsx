@@ -2,7 +2,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import React, { useState, useEffect } from 'react';
 import { contractService, ProjectCategory, GasType } from '../../services/contractService';
 import type { ProjectInfo, Listing } from '../../services/contractService';
-import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Coins, Tag, ExternalLink } from 'lucide-react';
+import { Loader2, Wallet, AlertCircle, TrendingUp, Package, Clock, Plus, Tag, ExternalLink } from 'lucide-react';
 import ProjectDetailsModal from '../../components/dashboard/ProjectDetailsModal';
 import CreateListingModal from '../../components/dashboard/CreateListingModal';
 
@@ -373,29 +373,13 @@ const CompanyDashboard: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                {/* Mint Button (Demo) */}
-                                                <button
-                                                    onClick={() => handleMintCredits(project.projectId)}
-                                                    disabled={mintingProjectId === project.projectId || project.status !== 2} // Disable if not approved
-                                                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    title={project.status !== 2 ? "Project must be approved to mint" : "Mint 1000 Credits (Demo)"}
-                                                >
-                                                    {mintingProjectId === project.projectId ? (
-                                                        <Loader2 size={16} className="animate-spin" />
-                                                    ) : (
-                                                        <Coins size={16} />
-                                                    )}
-                                                </button>
-
-
-
                                                 {/* List Button */}
                                                 <button
                                                     onClick={() => handleListProject(project)}
-                                                    className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                                                    title="List on Marketplace"
+                                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
                                                 >
                                                     <Tag size={16} />
+                                                    List on Marketplace
                                                 </button>
 
                                                 {/* View Button */}

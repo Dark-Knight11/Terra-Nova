@@ -68,6 +68,7 @@ const TOKEN_ABI = [
     // Admin Functions (for Registry role)
     'function mintCredits(uint256 _projectId, uint256 _amount, string memory _monitoringReportHash) external',
     'function approveProject(uint256 _projectId) external',
+    'function rejectProject(uint256 _projectId, string memory _reason) external',
     'function assignAuditor(uint256 _projectId, address _auditor) external',
 
     // Events
@@ -323,8 +324,8 @@ export class ContractService {
             console.log('getTotalProjects result:', total);
             return Number(total);
         } catch (error) {
-            console.error('Error in getTotalProjects:', error);
-            throw error;
+            console.warn('getTotalProjects not available on this contract, returning 0:', error);
+            return 0; // Fallback to 0 if function doesn't exist on deployed contract
         }
     }
 
@@ -367,11 +368,11 @@ export class ContractService {
         return { txHash: receipt.hash, projectId };
     }
 
-    async mintCredits(projectId: string, amount: string): Promise<string> {
+    async mintCredits(projectId: string, amount: string, reportHash?: string): Promise<string> {
         await this.ensureConnected();
-        // For demo purposes, using a hardcoded mock report hash
-        const reportHash = "ipfs://mock-report-" + Date.now();
-        const tx = await this.tokenContract!.mintCredits(projectId, amount, reportHash);
+        // Use provided report hash or generate a mock one
+        const monitoringReportHash = reportHash || `ipfs://mock-report-${Date.now()}`;
+        const tx = await this.tokenContract!.mintCredits(projectId, amount, monitoringReportHash);
         const receipt = await tx.wait();
         return receipt.hash;
     }
@@ -396,6 +397,12 @@ export class ContractService {
     async approveProject(projectId: string): Promise<void> {
         await this.ensureConnected();
         const tx = await this.tokenContract!.approveProject(projectId);
+        await tx.wait();
+    }
+
+    async rejectProject(projectId: string, reason: string): Promise<void> {
+        await this.ensureConnected();
+        const tx = await this.tokenContract!.rejectProject(projectId, reason);
         await tx.wait();
     }
 
