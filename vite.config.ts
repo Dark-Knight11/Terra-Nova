@@ -19,10 +19,18 @@ export default defineConfig({
   ],
   server: {
     proxy: {
+      // Proxy for agentic layer
       '/agent-api': {
         target: 'http://localhost:7378',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/agent-api/, ''),
+      },
+      // Proxy for backend API
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:3002',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path, // Keep /api prefix
       },
     },
   },
