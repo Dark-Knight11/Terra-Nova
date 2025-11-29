@@ -17,4 +17,13 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/agent-api': {
+        target: 'http://localhost:7378',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/agent-api/, ''),
+      },
+    },
+  },
 })

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Terminal, Globe, Newspaper, TrendingUp, ShieldCheck, Calculator, DollarSign, X } from 'lucide-react';
 
 interface AgenticAnalysisOverlayProps {
@@ -24,24 +25,105 @@ const AgenticAnalysisOverlay: React.FC<AgenticAnalysisOverlayProps> = ({ onCompl
     const [showResult, setShowResult] = useState(false);
     const [targetPrice, setTargetPrice] = useState<string>('');
     const [quantity, setQuantity] = useState<number>(1);
+    const [, setAgentResult] = useState<any>(null);
+    const agentResultRef = useRef<any>(null); // Use a ref to access current value inside closures
+
+    // Fetch agent data
+    useEffect(() => {
+        const fetchAgentAnalysis = async () => {
+            console.log("🚀 Starting Agent Analysis Fetch...");
+            try {
+                const payload = {
+                    initialPrice: parseFloat(initialPrice.toString().replace(/[^0-9.]/g, '')) || 0,
+                    projectName: "Terra Nova Project"
+                };
+                console.log("📤 Sending Payload to Webhook:", payload);
+
+                // Call the OpenServ Webhook Trigger
+                const response = await fetch('https://api.openserv.ai/webhooks/trigger/41d349da7e59445d89be18a91b892dda', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log("📥 Webhook Response Status:", response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("❌ Webhook Error Response:", errorText);
+                    throw new Error(`Agent API failed with status ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log("✅ Agent Analysis Result (Raw):", data);
+
+                // Handle case where data might be a stringified JSON (common in some agent setups)
+                let parsedData = data;
+                if (typeof data === 'string') {
+                    try {
+                        parsedData = JSON.parse(data);
+                    } catch (e) {
+                        console.error("⚠️ Failed to parse agent string response", e);
+                    }
+                }
+
+                // If the response is wrapped in a 'result' or 'content' field
+                if (parsedData.result) parsedData = typeof parsedData.result === 'string' ? JSON.parse(parsedData.result) : parsedData.result;
+                else if (parsedData.content) parsedData = typeof parsedData.content === 'string' ? JSON.parse(parsedData.content) : parsedData.content;
+
+                console.log("🎯 Final Parsed Agent Data:", parsedData);
+                setAgentResult(parsedData);
+                agentResultRef.current = parsedData;
+            } catch (error) {
+                console.error("💥 Agent analysis execution failed:", error);
+                // Fallback to mock calculation if agent fails
+                const priceNum = parseFloat(initialPrice.toString().replace(/[^0-9.]/g, '')) || 0;
+                const discountFactor = 0.95;
+                const fallbackData = {
+                    targetPrice: (priceNum * discountFactor).toFixed(2),
+                    reasoning: "Agent unavailable (Fallback). Using conservative estimate.",
+                    action: "BUY"
+                };
+                setAgentResult(fallbackData);
+                agentResultRef.current = fallbackData;
+            }
+        };
+
+        fetchAgentAnalysis();
+    }, [initialPrice]);
 
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
 
         const processStep = (index: number) => {
             if (index >= steps.length) {
-                // Calculate target price (randomly 95-99% of initial)
-                const priceNum = parseFloat(initialPrice.toString().replace(/[^0-9.]/g, '')) || 0;
-                const discountFactor = 0.95 + (Math.random() * 0.04);
-                const calculated = (priceNum * discountFactor).toFixed(2);
-                setTargetPrice(calculated);
+                // Wait for agent result if not ready
+                if (!agentResultRef.current) {
+                    setLogs(prev => {
+                        // Avoid duplicate waiting messages
+                        if (prev[prev.length - 1] === "> Waiting for agent final decision...") return prev;
+                        return [...prev, "> Waiting for agent final decision..."];
+                    });
+                    timeoutId = setTimeout(() => processStep(index), 1000);
+                    return;
+                }
 
-                setTimeout(() => setShowResult(true), 1000);
+                const result = agentResultRef.current;
+                setTargetPrice(result.targetPrice?.toString() || result.price?.toString() || '0.00');
+
+                if (result.reasoning) {
+                    setLogs(prev => [...prev, `> DECISION: ${result.action} `, ` > REASON: ${result.reasoning} `]);
+                }
+
+                setTimeout(() => setShowResult(true), 1500);
                 return;
             }
 
             setCurrentStep(index);
-            setLogs(prev => [...prev, `> ${steps[index].text}`]);
+            setLogs(prev => [...prev, `> ${steps[index].text} `]);
 
             timeoutId = setTimeout(() => {
                 processStep(index + 1);
@@ -51,7 +133,7 @@ const AgenticAnalysisOverlay: React.FC<AgenticAnalysisOverlayProps> = ({ onCompl
         processStep(0);
 
         return () => clearTimeout(timeoutId);
-    }, [initialPrice]);
+    }, []);
 
     // Auto-scroll logs
     useEffect(() => {
@@ -184,7 +266,7 @@ const AgenticAnalysisOverlay: React.FC<AgenticAnalysisOverlayProps> = ({ onCompl
                     <div className="w-full max-w-md h-1 bg-white/10 rounded-full overflow-hidden mb-8">
                         <div
                             className="h-full bg-emerald-500 transition-all duration-500 ease-out"
-                            style={{ width: `${Math.min(((currentStep + 1) / steps.length) * 100, 100)}%` }}
+                            style={{ width: `${Math.min(((currentStep + 1) / steps.length) * 100, 100)}% ` }}
                         />
                     </div>
 
